@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: Wind Speed API
+  description: An API to receive and process weather-related events including wind speed, temperature, and alerts.
+  version: 1.0.0
+paths:
+  /events/wind-speed:
+    post:
+      summary: Submit wind speed event data
+      description: Receives wind speed data along with the location and time of measurement.
+      operationId: app.createWindSpeedEvent
+      requestBody:
+        description: Wind speed event data to submit.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WindSpeedEvent'
+      responses:
+        "201":
+          description: Wind speed event created successfully.
+        "400":
+          description: Invalid input provided.
+    get:
+      tags:
+      - wind-speed
+      summary: Retrieve temperature events within a time range
+      description: Fetch all temperature events recorded between the given timestamps.
+      operationId: app.get_windspeed_readings
+      parameters:
+        - name: start_timestamp
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: The start of the time range (inclusive).
+        - name: end_timestamp
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: The end of the time range (exclusive).
+      responses:
+        "200":
+          description: A list of temperature events within the specified time range.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WindSpeedEvent'
+        "400":
+          description: Invalid timestamp format
+        "404":
+          description: No temperature events found
+  /events/temperature:
+    post:
+      summary: Submit temperature event data
+      description: Receives temperature data from a weather device.
+      operationId: app.createTemperatureEvent
+      requestBody:
+        description: Temperature event data to submit.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemperatureEvent'
+      responses:
+        "201":
+          description: Temperature event created successfully.
+        "400":
+          description: Invalid input provided.
+    get:
+      tags:
+      - temp
+      summary: Retrieve temperature events within a time range
+      description: Fetch all temperature events recorded between the given timestamps.
+      operationId: app.get_temp_readings
+      parameters:
+        - name: start_timestamp
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: The start of the time range (inclusive).
+        - name: end_timestamp
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: The end of the time range (exclusive).
+      responses:
+        "200":
+          description: A list of temperature events within the specified time range.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TemperatureEvent'
+        "400":
+          description: Invalid timestamp format
+        "404":
+          description: No temperature events found
+components:
+  schemas:
+    WindSpeedEvent:
+      type: object
+      required:
+        - trace_id
+        - eventID
+        - deviceID
+        - timeStamp
+        - windspeed
+        - location
+      properties:
+        eventID:
+          type: string
+          format: uuid
+          description: Unique identifier for the wind speed event.
+        deviceID:
+          type: string
+          description: Identifier for the device capturing the wind speed.
+        timeStamp:
+          type: string
+          format: date-time
+          description: Time when the wind speed was recorded.
+        windspeed:
+          type: number
+          format: float
+          description: The measured wind speed.
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+              description: Latitude of the location.
+            longitude:
+              type: number
+              description: Longitude of the location.
+        trace_id:
+          type: string
+          format: uuid
+          description: trace
+    TemperatureEvent:
+      type: object
+      required:
+        - trace_id
+        - eventID
+        - deviceID
+        - timeStamp
+        - temperature
+      properties:
+        eventID:
+          type: string
+          format: uuid
+          description: Unique identifier for the temperature event.
+        deviceID:
+          type: string
+          description: Identifier for the device capturing the temperature.
+        timeStamp:
+          type: string
+          format: date-time
+          description: Time when the temperature was recorded.
+        temperature:
+          type: number
+          format: float
+          description: The measured temperature.
+        trace_id:
+          type: string
+          format: uuid
+          description: trace id

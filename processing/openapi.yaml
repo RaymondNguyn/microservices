@@ -1,0 +1,51 @@
+openapi: 3.0.3
+info:
+  title: Wind Speed API
+  description: An API to receive and process weather-related events including wind speed, temperature, and alerts.
+  version: 1.0.0
+paths:
+  /stats:
+    get:
+      summary: Gets the event stats
+      operationId: app.get_stats
+      description: Gets windspeed and temp
+      responses:
+        '200':
+          description: Successfully returned a list of wind speed
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/ReadingStats'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+components:
+  schemas:
+    ReadingStats:
+      required:
+        - num_temp_readings
+        - max_temp_readings
+        - num_wind_readings
+        - max_wind_readings
+      properties:
+        num_temp_readings:
+          type: integer
+          example: 500000
+        max_temp_readings:
+          type: integer
+          example: 200
+        num_wind_readings:
+          type: integer
+          example: 180
+        max_wind_readings:
+          type: integer
+          example: 500000
+      type: object

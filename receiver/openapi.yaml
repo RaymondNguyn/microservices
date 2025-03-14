@@ -1,0 +1,98 @@
+openapi: 3.0.3
+info:
+  title: Wind Speed API
+  description: An API to receive and process weather-related events including wind speed and temperature.
+  version: 1.0.0
+paths:
+  /events/wind-speed:
+    post:
+      summary: Submit wind speed event data
+      description: Receives wind speed data along with the location and time of measurement.
+      operationId: app.createWindSpeedEvent
+      requestBody:
+        description: Wind speed event data to submit.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WindSpeedEvent"
+      responses:
+        "201":
+          description: Wind speed event created successfully.
+        "400":
+          description: Invalid input provided.
+  /events/temperature:
+    post:
+      summary: Submit temperature event data
+      description: Receives temperature data from a weather device.
+      operationId: app.createTemperatureEvent
+      requestBody:
+        description: Temperature event data to submit.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemperatureEvent"
+      responses:
+        "201":
+          description: Temperature event created successfully.
+        "400":
+          description: Invalid input provided.
+components:
+  schemas:
+    WindSpeedEvent:
+      type: object
+      required:
+        - eventID
+        - deviceID
+        - timeStamp
+        - windspeed
+        - location
+      properties:
+        eventID:
+          type: string
+          format: uuid
+          description: Unique identifier for the wind speed event.
+        deviceID:
+          type: string
+          description: Identifier for the device capturing the wind speed.
+        timeStamp:
+          type: string
+          format: date-time
+          description: Time when the wind speed was recorded.
+        windspeed:
+          type: number
+          format: float
+          description: The measured wind speed.
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+              description: Latitude of the location.
+            longitude:
+              type: number
+              description: Longitude of the location.
+    TemperatureEvent:
+      type: object
+      required:
+        - eventID
+        - deviceID
+        - timeStamp
+        - temperature
+      properties:
+        eventID:
+          type: string
+          format: uuid
+          description: Unique identifier for the temperature event.
+        deviceID:
+          type: string
+          description: Identifier for the device capturing the temperature.
+        timeStamp:
+          type: string
+          format: date-time
+          description: Time when the temperature was recorded.
+        temperature:
+          type: number
+          format: float
+          description: The measured temperature.

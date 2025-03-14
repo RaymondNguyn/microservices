@@ -1,0 +1,118 @@
+import connexion
+from connexion import NoContent
+import json
+from datetime import datetime
+import logging
+import logging.config
+import yaml
+import os
+from apscheduler.schedulers.background import BackgroundScheduler
+import httpx
+
+with open('app_conf.yml', 'r') as f:
+    Conf = yaml.safe_load(f.read())
+    print(Conf)
+
+TEMP_URL=Conf["events"]["temperature"]["url"]
+WIND_URL=Conf["events"]["wind"]["url"]
+
+
+with open("log_conf.yml", "r") as f:
+    LOG_CONFIG = yaml.safe_load(f.read())
+    logging.config.dictConfig(LOG_CONFIG)
+
+logger = logging.getLogger('basicLogger')
+
+
+app = connexion.FlaskApp(__name__, specification_dir="")
+app.add_api("openapi.yaml", strict_validation=True, validate_responses=True)
+
+
+
+
+def populate_stats():
+    logger.info("Processing has started")
+    print("In function populate stats!")
+    stats_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
+
+    default_stats = {
+        "num_temp_readings":1,
+        "max_temp_readings":0,
+        "num_wind_readings":0,
+        "max_wind_readings":0,
+        "last_updated": datetime.min.isoformat()
+    }
+
+    if os.path.exists(stats_file):
+        with open(stats_file, 'r') as f:
+            stats = json.load(f)
+    else:
+        logging.info("Stats file does not exist. Using default stats.")
+        stats = default_stats
+    
+    last_updated = stats["last_updated"]
+    current_time = datetime.now().isoformat()
+    
+    temp_url = f"{TEMP_URL}?start_timestamp={last_updated}&end_timestamp={current_time}"
+    wind_url = f"{WIND_URL}?start_timestamp={last_updated}&end_timestamp={current_time}"
+
+    logger.debug(f"Fetching wind data from: {wind_url}")
+    logger.debug(f"Fetching wind data from: {temp_url}")
+    temp_response = httpx.get(temp_url)
+    wind_response = httpx.get(wind_url)
+    logger.debug(temp_response.json())
+    logger.debug(f"Temperature Response: {temp_response.json()}")
+    logger.debug(f"Windspeed Response: {wind_response.json()}")
+
+    logger.debug(f"Temperature Response Status Code: {temp_response.status_code}")
+    logger.debug(f"Wind Speed Response Status Code: {wind_response.status_code}")
+    logger.debug(f"Temperature Response Raw: {temp_response.text}")
+    logger.debug(f"Windspeed Response Raw: {wind_response.text}")
+
+    logger.debug(f"Requesting temperature data from {last_updated} to {current_time}")
+    logger.debug(f"Requesting wind speed data from {last_updated} to {current_time}")
+
+
+    # num_temp_readings = 0  
+    # num_wind_readings = 0  
+
+    if temp_response.status_code == 200:
+        temp_events = temp_response.json()
+        num_temp_readings = len(temp_events)
+        max_temp = max(event["temperature"] for event in temp_events) if temp_events else stats["max_temp_readings"]
+    else:
+        logging.error(f"Failed to get temperature events. Status Code: {temp_response.status_code}")
+        num_temp_readings = 0
+        max_temp = stats["max_temp_readings"]
+
+    if wind_response.status_code == 200:
+        wind_events = wind_response.json()
+        num_wind_readings = len(wind_events)
+        max_wind = max(event["windspeed"] for event in wind_events) if wind_events else stats["max_wind_readings"]
+    else:
+        logging.error(f"Failed to get wind events. Status Code: {wind_response.status_code}")
+        num_wind_readings = 0
+        max_wind = stats["max_wind_readings"]
+
+    stats["num_temp_readings"] += num_temp_readings
+    stats["num_wind_readings"] += num_wind_readings
+    stats["max_temp_readings"] = max(stats["max_temp_readings"], max_temp)
+    stats["max_wind_readings"] = max(stats["max_wind_readings"], max_wind)
+    stats["last_updated"] = current_time
+
+    with open(stats_file, "w") as f:
+        json.dump(stats, f, indent=4)
+
+def init_scheduler():
+    sched = BackgroundScheduler(daemon=True)
+    sched.add_job(
+        populate_stats,
+        'interval',
+        seconds=Conf['scheduler']['interval']
+    )
+    sched.start()
+
+
+if __name__ == "__main__":
+    init_scheduler()
+    app.run(port=8100, host="0.0.0.0")

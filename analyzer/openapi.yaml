@@ -1,0 +1,111 @@
+openapi: 3.0.3
+
+info:
+  title: Wind Speed API
+  description: An API to receive and process weather-related events including wind speed and temperature.
+  version: 1.0.0
+paths:
+  /events/wind-speed:
+    get:
+      summary: Get event of windspeed by index
+      description: Get event of windspeed by index
+      operationId: app.getWindSpeedEvent
+      parameters:
+        - name: index
+          in: query
+          description: The index of the event to retrieve.
+          required: true
+          schema:
+            type: integer
+            example: 0
+      responses:
+        '200':
+          description: Event of type event1 found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event:
+                    type: object
+                    properties:
+                      eventID:
+                        type: string
+                      deviceID:
+                        type: string
+                      timeStamp:
+                        type: string
+                        format: date-time
+                      windspeed:
+                        type: number
+                        format: float
+                      location:
+                        type: object
+                        properties:
+                          latitude:
+                            type: number
+                          longitude:
+                            type: number
+        '404':
+          description: Event not found for the given index.
+
+  /events/temperature:
+    get:
+      summary: get temp data
+      description: get temp data
+      operationId: app.getTemperatureEvent
+      parameters:
+        - name: index
+          in: query
+          description: The index of the event to retrieve.
+          required: true
+          schema:
+            type: integer
+            example: 0
+      responses:
+        '200':
+          description: Event of type event2 found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event:
+                    type: object
+                    properties:
+                      eventID:
+                        type: string
+                      deviceID:
+                        type: string
+                      timeStamp:
+                        type: string
+                        format: date-time
+                      temperature:
+                        type: number
+                        format: float
+                      location:
+                        type: object
+                        properties:
+                          latitude:
+                            type: number
+                          longitude:
+                            type: number
+        '404':
+          description: Event not found for the given index.
+  /stats:
+    get:
+      summary: Retrieve statistics about the events in the Kafka queue
+      description: Returns counts of each event type currently in the Kafka queue.
+      operationId: app.getStats
+      responses:
+        '200':
+          description: Event statistics retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  windspeed_events:
+                    type: integer
+                  temperature_events:
+                    type: integer

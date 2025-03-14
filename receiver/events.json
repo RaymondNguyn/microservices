@@ -1,0 +1,50 @@
+{
+    "num_wind_speed": 1658,
+    "recent_wind_speed": [
+        {
+            "msg_data": "Wind speed of 30 m/s recorded by device windSensor-001 at location 43, -70 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.274746"
+        },
+        {
+            "msg_data": "Wind speed of 12 m/s recorded by device windSensor-001 at location 39, -77 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.217539"
+        },
+        {
+            "msg_data": "Wind speed of 7 m/s recorded by device windSensor-001 at location 37, -80 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.169401"
+        },
+        {
+            "msg_data": "Wind speed of 30 m/s recorded by device windSensor-001 at location 36, -71 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.159093"
+        },
+        {
+            "msg_data": "Wind speed of 7 m/s recorded by device windSensor-001 at location 38, -72 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.122152"
+        }
+    ],
+    "num_temperature": 1651,
+    "recent_temperature": [
+        {
+            "msg_data": "Temperature of 22\u00b0C recorded by device device123 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.306585"
+        },
+        {
+            "msg_data": "Temperature of 29\u00b0C recorded by device device123 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.241772"
+        },
+        {
+            "msg_data": "Temperature of 21\u00b0C recorded by device device123 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.195009"
+        },
+        {
+            "msg_data": "Temperature of 17\u00b0C recorded by device device123 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.182225"
+        },
+        {
+            "msg_data": "Temperature of 26\u00b0C recorded by device device123 on 2025-01-30T14:26:41Z.",
+            "received_timestamp": "2025-01-30 14:26:41.146858"
+        }
+    ],
+    "num_alert": 0,
+    "recent_alert": []
+}
