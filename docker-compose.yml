@@ -11,37 +11,38 @@ services:
       - mysql_data:/var/lib/mysql
     ports:
       - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
-    restart: always
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
+    image: wurstmeister/zookeeper
     volumes:
-      - /opt/zookeeper-3.4.13/data
+      - zookeeper_data:/data
+      - zookeeper_data:/datalog
 
   kafka:
-    image: confluentinc/cp-kafka:latest
-    container_name: kafka
-    restart: always
-    depends_on:
-      - zookeeper
+    image: wurstmeister/kafka
+    command: [start-kafka.sh]
     ports:
       - "9092:9092"
     environment:
-      KAFKA_BROKER_ID: 1
+      KAFKA_CREATE_TOPICS: "events:1:1"
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_LISTENERS: INSIDE://:29092,OUTSIDE://:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:29092,OUTSIDE://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092 # Use localhost for external access
-      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
-      KAFKA_LISTENER_NAME: PLAINTEXT
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_LOG_DIRS: /kafka/kafka-logs
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - kafka_data:/kafka/kafka-logs
-
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list | grep -w events"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   receiver:
     build:
@@ -55,7 +56,8 @@ services:
       - CONFIG_FILE=/app/config/receiver_conf.yml
       - LOG_FILE=/app/config/log_conf.yml
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
 
   storage:
     build:
@@ -69,8 +71,10 @@ services:
       - CONFIG_FILE=/app/config/storage_conf.yml
       - LOG_FILE=/app/config/log_conf.yml
     depends_on:
-      - db
-      - kafka
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   processing:
     build:
@@ -98,11 +102,10 @@ services:
       - CONFIG_FILE=/app/config/analyzer_conf.yml
       - LOG_FILE=/app/config/log_conf.yml
     depends_on:
-      - kafka
-
+      kafka:
+        condition: service_healthy
 
 volumes:
   mysql_data:
   kafka_data:
   zookeeper_data:
-

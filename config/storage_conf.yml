@@ -2,7 +2,7 @@ version: 1
 datastore:
   user: ray
   password: password
-  hostname: 127.0.0.1
+  hostname: db
   port: 3306
   db: wind
 
