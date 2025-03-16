@@ -1,8 +1,0 @@
-version: 1
-scheduler:
-  interval: 5
-events:
-  wind:
-    url: http://localhost:8090/events/wind-speed
-  temperature:
-    url: http://localhost:8090/events/temperature

@@ -31,9 +31,6 @@ logger = logging.getLogger('basicLogger')
 app = connexion.FlaskApp(__name__, specification_dir="")
 app.add_api("openapi.yaml", strict_validation=True, validate_responses=True)
 
-
-
-
 def populate_stats():
     logger.info("Processing has started")
     print("In function populate stats!")
@@ -60,25 +57,8 @@ def populate_stats():
     temp_url = f"{TEMP_URL}?start_timestamp={last_updated}&end_timestamp={current_time}"
     wind_url = f"{WIND_URL}?start_timestamp={last_updated}&end_timestamp={current_time}"
 
-    logger.debug(f"Fetching wind data from: {wind_url}")
-    logger.debug(f"Fetching wind data from: {temp_url}")
     temp_response = httpx.get(temp_url)
     wind_response = httpx.get(wind_url)
-    logger.debug(temp_response.json())
-    logger.debug(f"Temperature Response: {temp_response.json()}")
-    logger.debug(f"Windspeed Response: {wind_response.json()}")
-
-    logger.debug(f"Temperature Response Status Code: {temp_response.status_code}")
-    logger.debug(f"Wind Speed Response Status Code: {wind_response.status_code}")
-    logger.debug(f"Temperature Response Raw: {temp_response.text}")
-    logger.debug(f"Windspeed Response Raw: {wind_response.text}")
-
-    logger.debug(f"Requesting temperature data from {last_updated} to {current_time}")
-    logger.debug(f"Requesting wind speed data from {last_updated} to {current_time}")
-
-
-    # num_temp_readings = 0  
-    # num_wind_readings = 0  
 
     if temp_response.status_code == 200:
         temp_events = temp_response.json()
