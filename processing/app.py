@@ -9,7 +9,11 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import httpx
 
-with open('app_conf.yml', 'r') as f:
+config_file_path = os.getenv("CONFIG_FILE")
+log_file_path = os.getenv("LOG_FILE")
+
+
+with open(config_file_path, 'r') as f:
     Conf = yaml.safe_load(f.read())
     print(Conf)
 
@@ -17,7 +21,7 @@ TEMP_URL=Conf["events"]["temperature"]["url"]
 WIND_URL=Conf["events"]["wind"]["url"]
 
 
-with open("log_conf.yml", "r") as f:
+with open(log_file_path, "r") as f:
     LOG_CONFIG = yaml.safe_load(f.read())
     logging.config.dictConfig(LOG_CONFIG)
 

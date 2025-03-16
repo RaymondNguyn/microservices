@@ -14,15 +14,20 @@ from pykafka import KafkaClient
 from pykafka.common import OffsetType
 from threading import Thread
 import uuid
+import os
 
-with open('app_conf.yml', 'r') as f:
+config_file_path = os.getenv("CONFIG_FILE")
+log_file_path = os.getenv("LOG_FILE")
+
+
+with open(config_file_path, 'r') as f:
     app_conf = yaml.safe_load(f.read())
 
 
 DATABASE_URL = f"mysql://{app_conf['datastore']['user']}:{app_conf['datastore']['password']}@{app_conf['datastore']['hostname']}:{app_conf['datastore']['port']}/{app_conf['datastore']['db']}"
 engine = create_engine(DATABASE_URL)
 
-with open("log_conf.yml", "r") as f:
+with open(log_file_path, "r") as f:
     LOG_CONFIG = yaml.safe_load(f.read())
     logging.config.dictConfig(LOG_CONFIG)
 
