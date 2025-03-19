@@ -10,20 +10,21 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import httpx
 
 config_file_path = os.getenv("CONFIG_FILE")
+log_config_path = os.getenv("LOG_CONFIG_FILE")
 log_file_path = os.getenv("LOG_FILE")
-
 
 with open(config_file_path, 'r') as f:
     Conf = yaml.safe_load(f.read())
     print(Conf)
 
+with open(log_config_path, "r") as f:
+    LOG_CONFIG = yaml.safe_load(f.read())
+    LOG_CONFIG['handlers']['file']['filename'] = log_file_path
+    logging.config.dictConfig(LOG_CONFIG)
+
 TEMP_URL=Conf["events"]["temperature"]["url"]
 WIND_URL=Conf["events"]["wind"]["url"]
 
-
-with open(log_file_path, "r") as f:
-    LOG_CONFIG = yaml.safe_load(f.read())
-    logging.config.dictConfig(LOG_CONFIG)
 
 logger = logging.getLogger('basicLogger')
 
@@ -34,10 +35,11 @@ app.add_api("openapi.yaml", strict_validation=True, validate_responses=True)
 def populate_stats():
     logger.info("Processing has started")
     print("In function populate stats!")
-    stats_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
+    # stats_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
+    stats_file = "/app/data/data.json"
 
     default_stats = {
-        "num_temp_readings":1,
+        "num_temp_readings":0,
         "max_temp_readings":0,
         "num_wind_readings":0,
         "max_wind_readings":0,

@@ -8,7 +8,7 @@ services:
       MYSQL_PASSWORD: password
       MYSQL_DATABASE: wind
     volumes:
-      - mysql_data:/var/lib/mysql
+      - ./data/mysql:/var/lib/mysql   # Bind mount for MySQL
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 5s
@@ -32,6 +32,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     volumes:
+      - ./data/kafka:/kafka   # Bind mount for Kafka data
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list | grep -w events"]
@@ -48,12 +49,15 @@ services:
       - "8080:8080"
     volumes:
       - ./config:/app/config
+      - ./logs:/logs  # Bind mount for logs
     environment:
       - CONFIG_FILE=/app/config/receiver_conf.yml
-      - LOG_FILE=/app/config/log_conf.yml
+      - LOG_FILE=/logs/receiver.log
+      - LOG_CONFIG_FILE=/app/config/log_conf.yml 
     depends_on:
       kafka:
         condition: service_healthy
+    user: "1000:1000"
 
   storage:
     build:
@@ -61,14 +65,17 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./config:/app/config
+      - ./logs:/logs  # Bind mount for logs
     environment:
       - CONFIG_FILE=/app/config/storage_conf.yml
-      - LOG_FILE=/app/config/log_conf.yml
+      - LOG_FILE=/logs/storage.log
+      - LOG_CONFIG_FILE=/app/config/log_conf.yml 
     depends_on:
       db:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    user: "1000:1000"
 
   processing:
     build:
@@ -78,11 +85,15 @@ services:
       - "8100:8100"
     volumes:
       - ./config:/app/config
+      - ./logs:/logs  # Bind mount for logs
+      - ./data/processing:/app/data  # Store JSON file persistently
     environment:
       - CONFIG_FILE=/app/config/processing_conf.yml
-      - LOG_FILE=/app/config/log_conf.yml
+      - LOG_FILE=/logs/processing.log
+      - LOG_CONFIG_FILE=/app/config/log_conf.yml 
     depends_on:
       - storage
+    user: "1000:1000"
 
   analyzer:
     build:
@@ -92,14 +103,16 @@ services:
       - "8900:8900"
     volumes:
       - ./config:/app/config
+      - ./logs:/logs  # Bind mount for logs
     environment:
       - CONFIG_FILE=/app/config/analyzer_conf.yml
-      - LOG_FILE=/app/config/log_conf.yml
+      - LOG_FILE=/logs/analyzer.log
+      - LOG_CONFIG_FILE=/app/config/log_conf.yml 
     depends_on:
       kafka:
         condition: service_healthy
+    user: "1000:1000"
 
 volumes:
   mysql_data:
-  kafka_data:
   zookeeper_data:

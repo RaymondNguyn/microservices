@@ -17,8 +17,12 @@ RUN pip3 install -r requirements.txt
 # Copy eerything from here to /app
 COPY . /app
 
-RUN chown -R nobody:nogroup /app
-USER nobody
+RUN groupadd -r appgroup && useradd -r -g appgroup -u 1000 appuser
+
+# Create logs directory with proper permissions
+RUN mkdir -p /logs && chown -R appuser:appgroup /logs && chmod 755 /logs
+
+USER appuser
 
 EXPOSE 8080
 

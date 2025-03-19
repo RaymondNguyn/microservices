@@ -17,6 +17,7 @@ import uuid
 import os
 
 config_file_path = os.getenv("CONFIG_FILE")
+log_config_path = os.getenv("LOG_CONFIG_FILE")
 log_file_path = os.getenv("LOG_FILE")
 
 
@@ -27,8 +28,9 @@ with open(config_file_path, 'r') as f:
 DATABASE_URL = f"mysql://{app_conf['datastore']['user']}:{app_conf['datastore']['password']}@{app_conf['datastore']['hostname']}:{app_conf['datastore']['port']}/{app_conf['datastore']['db']}"
 engine = create_engine(DATABASE_URL)
 
-with open(log_file_path, "r") as f:
+with open(log_config_path, "r") as f:
     LOG_CONFIG = yaml.safe_load(f.read())
+    LOG_CONFIG['handlers']['file']['filename'] = log_file_path
     logging.config.dictConfig(LOG_CONFIG)
 
 logger = logging.getLogger('basicLogger')

@@ -13,14 +13,16 @@ import time
 import os
 
 config_file_path = os.getenv("CONFIG_FILE")
+log_config_path = os.getenv("LOG_CONFIG_FILE")
 log_file_path = os.getenv("LOG_FILE")
 
 # Set up config  files
 with open(config_file_path, 'r') as f:
     app_config = yaml.safe_load(f.read())
 
-with open(log_file_path, "r") as f:
+with open(log_config_path, "r") as f:
     LOG_CONFIG = yaml.safe_load(f.read())
+    LOG_CONFIG['handlers']['file']['filename'] = log_file_path
     logging.config.dictConfig(LOG_CONFIG)
 
 
