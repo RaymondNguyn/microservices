@@ -37,8 +37,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list | grep -w events"]
-      interval: 30s
-      timeout: 30s
+      interval: 60s
+      timeout: 60s
       retries: 10
       start_period: 60s
 
