@@ -35,27 +35,46 @@ app.add_api("openapi.yaml", strict_validation=True, validate_responses=True)
 def populate_stats():
     logger.info("Processing has started")
     print("In function populate stats!")
-    # stats_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
+
     stats_file = "/app/data/data.json"
 
+    # Default stats in case the file is missing or invalid
     default_stats = {
-        "num_temp_readings":0,
-        "max_temp_readings":0,
-        "num_wind_readings":0,
-        "max_wind_readings":0,
-        "last_updated": datetime.min.isoformat()
+        "num_temp_readings": 0,
+        "max_temp_readings": 0,
+        "num_wind_readings": 0,
+        "max_wind_readings": 0,
+        "last_updated": datetime.now().isoformat()  # Changed from datetime.min to avoid potential issues
     }
 
-    if os.path.exists(stats_file):
-        with open(stats_file, 'r') as f:
-            stats = json.load(f)
-    else:
-        logging.info("Stats file does not exist. Using default stats.")
+    # Read stats file safely
+    try:
+        if os.path.exists(stats_file) and os.stat(stats_file).st_size > 0:
+            with open(stats_file, 'r') as f:
+                stats = json.load(f)
+        else:
+            logger.warning(f"Stats file missing or empty. Using default stats.")
+            stats = default_stats
+            # Immediately write the default stats to file
+            with open(stats_file, "w") as f:
+                json.dump(stats, f, indent=4)
+    except json.JSONDecodeError as e:
+        logger.error(f"Corrupt JSON in {stats_file}. Resetting to default stats. Error: {e}")
         stats = default_stats
-    
-    last_updated = stats["last_updated"]
+        # Immediately write the default stats to file
+        with open(stats_file, "w") as f:
+            json.dump(stats, f, indent=4)
+    except Exception as e:
+        logger.error(f"Unexpected error reading {stats_file}: {e}")
+        stats = default_stats
+        # Immediately write the default stats to file
+        with open(stats_file, "w") as f:
+            json.dump(stats, f, indent=4)
+
+    last_updated = stats.get("last_updated", datetime.now().isoformat())
     current_time = datetime.now().isoformat()
-    
+
+    # Rest of the function continues as before...
     temp_url = f"{TEMP_URL}?start_timestamp={last_updated}&end_timestamp={current_time}"
     wind_url = f"{WIND_URL}?start_timestamp={last_updated}&end_timestamp={current_time}"
 
@@ -65,18 +84,18 @@ def populate_stats():
     if temp_response.status_code == 200:
         temp_events = temp_response.json()
         num_temp_readings = len(temp_events)
-        max_temp = max(event["temperature"] for event in temp_events) if temp_events else stats["max_temp_readings"]
+        max_temp = max((event["temperature"] for event in temp_events), default=stats["max_temp_readings"])
     else:
-        logging.error(f"Failed to get temperature events. Status Code: {temp_response.status_code}")
+        logger.error(f"Failed to get temperature events. Status Code: {temp_response.status_code}")
         num_temp_readings = 0
         max_temp = stats["max_temp_readings"]
 
     if wind_response.status_code == 200:
         wind_events = wind_response.json()
         num_wind_readings = len(wind_events)
-        max_wind = max(event["windspeed"] for event in wind_events) if wind_events else stats["max_wind_readings"]
+        max_wind = max((event["windspeed"] for event in wind_events), default=stats["max_wind_readings"])
     else:
-        logging.error(f"Failed to get wind events. Status Code: {wind_response.status_code}")
+        logger.error(f"Failed to get wind events. Status Code: {wind_response.status_code}")
         num_wind_readings = 0
         max_wind = stats["max_wind_readings"]
 
@@ -86,8 +105,12 @@ def populate_stats():
     stats["max_wind_readings"] = max(stats["max_wind_readings"], max_wind)
     stats["last_updated"] = current_time
 
-    with open(stats_file, "w") as f:
-        json.dump(stats, f, indent=4)
+    # Write updated stats safely
+    try:
+        with open(stats_file, "w") as f:
+            json.dump(stats, f, indent=4)
+    except IOError as e:
+        logger.error(f"Failed to write to {stats_file}: {e}")
 
 def init_scheduler():
     sched = BackgroundScheduler(daemon=True)

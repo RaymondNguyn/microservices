@@ -5,22 +5,22 @@ info:
   version: 1.0.0
 paths:
   /events/wind-speed:
-    post:
-      summary: Submit wind speed event data
-      description: Receives wind speed data along with the location and time of measurement.
-      operationId: app.createWindSpeedEvent
-      requestBody:
-        description: Wind speed event data to submit.
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WindSpeedEvent'
-      responses:
-        "201":
-          description: Wind speed event created successfully.
-        "400":
-          description: Invalid input provided.
+    # post:
+    #   summary: Submit wind speed event data
+    #   description: Receives wind speed data along with the location and time of measurement.
+    #   operationId: app.createWindSpeedEvent
+    #   requestBody:
+    #     description: Wind speed event data to submit.
+    #     required: true
+    #     content:
+    #       application/json:
+    #         schema:
+    #           $ref: '#/components/schemas/WindSpeedEvent'
+    #   responses:
+    #     "201":
+    #       description: Wind speed event created successfully.
+    #     "400":
+    #       description: Invalid input provided.
     get:
       tags:
       - wind-speed
@@ -56,22 +56,22 @@ paths:
         "404":
           description: No temperature events found
   /events/temperature:
-    post:
-      summary: Submit temperature event data
-      description: Receives temperature data from a weather device.
-      operationId: app.createTemperatureEvent
-      requestBody:
-        description: Temperature event data to submit.
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TemperatureEvent'
-      responses:
-        "201":
-          description: Temperature event created successfully.
-        "400":
-          description: Invalid input provided.
+    # post:
+    #   summary: Submit temperature event data
+    #   description: Receives temperature data from a weather device.
+    #   operationId: app.createTemperatureEvent
+    #   requestBody:
+    #     description: Temperature event data to submit.
+    #     required: true
+    #     content:
+    #       application/json:
+    #         schema:
+    #           $ref: '#/components/schemas/TemperatureEvent'
+    #   responses:
+    #     "201":
+    #       description: Temperature event created successfully.
+    #     "400":
+    #       description: Invalid input provided.
     get:
       tags:
       - temp

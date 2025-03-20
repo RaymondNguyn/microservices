@@ -21,6 +21,7 @@ RUN groupadd -r appgroup && useradd -r -g appgroup -u 1000 appuser
 
 # Create logs directory with proper permissions
 RUN mkdir -p /logs && chown -R appuser:appgroup /logs && chmod 755 /logs
+RUN mkdir -p /app/data && chown -R appuser:appgroup /app/data && chmod -R 755 /app/data
 
 USER appuser
 

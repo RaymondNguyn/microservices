@@ -3,6 +3,6 @@ scheduler:
   interval: 5
 events:
   wind:
-    url: http://localhost:8090/events/wind-speed
+    url: http://storage:8090/events/wind-speed
   temperature:
-    url: http://localhost:8090/events/temperature
+    url: http://storage:8090/events/temperature

@@ -124,6 +124,66 @@ def store_temperature_event(session,payload, trace_id):
     session.commit()
     return NoContent,201
 
+# Processing endpoints
+def get_windspeed_readings(start_timestamp, end_timestamp):
+    """Gets wind speed readings between the start and end timestamps"""
+    session = make_session()
+    try:
+        start = datetime.fromisoformat(start_timestamp.replace('Z', '+00:00'))
+        end = datetime.fromisoformat(end_timestamp.replace('Z', '+00:00'))
+        
+        statement = select(WindReport).where(
+            WindReport.timeStamp >= start,
+            WindReport.timeStamp < end
+        )
+        
+        results = [
+            {
+                "eventID": result.event_id,
+                "deviceID": result.device_id,
+                "timeStamp": result.timeStamp.isoformat() + 'Z',
+                "windspeed": result.windspeed,
+                "location": json.loads(result.location),
+                "trace_id": result.trace_id
+            }
+            for result in session.execute(statement).scalars().all()
+        ]
+        
+        logger.info("Found %d wind events (start: %s, end: %s)", len(results), start, end)
+        return results
+    finally:
+        session.close()
+
+def get_temp_readings(start_timestamp, end_timestamp):
+    """Gets temperature readings between the start and end timestamps"""
+    session = make_session()
+    try:
+        start = datetime.fromisoformat(start_timestamp.replace('Z', '+00:00'))
+        end = datetime.fromisoformat(end_timestamp.replace('Z', '+00:00'))
+        
+        statement = select(TempReport).where(
+            TempReport.timeStamp >= start,
+            TempReport.timeStamp < end
+        )
+        
+        results = [
+            {
+                "eventID": result.event_id,
+                "deviceID": result.device_id,
+                "timeStamp": result.timeStamp.isoformat() + 'Z',
+                "temperature": result.temperature,
+                "trace_id": result.trace_id
+            }
+            for result in session.execute(statement).scalars().all()
+        ]
+        
+        logger.info("Found %d temperature events (start: %s, end: %s)", len(results), start, end)
+        return results
+    finally:
+        session.close()
+
+
+
 if __name__ == "__main__":
     setup_kafka_thread()
     Base.metadata.create_all(engine)
