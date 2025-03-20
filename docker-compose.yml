@@ -4,11 +4,11 @@ services:
     image: mysql
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: 1
-      MYSQL_USER: ray
-      MYSQL_PASSWORD: password
+      MYSQL_USER: "${MYSQLUSER}"
+      MYSQL_PASSWORD: "${MYSQLPASSWORD}"
       MYSQL_DATABASE: wind
     volumes:
-      - ./data/mysql:/var/lib/mysql   # Bind mount for MySQL
+      - mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 5s

@@ -1,7 +1,7 @@
 import connexion
 from connexion import NoContent
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import logging
 import logging.config
 import yaml
@@ -44,7 +44,7 @@ def populate_stats():
         "max_temp_readings": 0,
         "num_wind_readings": 0,
         "max_wind_readings": 0,
-        "last_updated": datetime.now().isoformat()  # Changed from datetime.min to avoid potential issues
+        "last_updated": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     }
 
     # Read stats file safely
@@ -71,8 +71,8 @@ def populate_stats():
         with open(stats_file, "w") as f:
             json.dump(stats, f, indent=4)
 
-    last_updated = stats.get("last_updated", datetime.now().isoformat())
-    current_time = datetime.now().isoformat()
+    last_updated = stats.get("last_updated", datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
+    current_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
     # Rest of the function continues as before...
     temp_url = f"{TEMP_URL}?start_timestamp={last_updated}&end_timestamp={current_time}"
@@ -111,6 +111,13 @@ def populate_stats():
             json.dump(stats, f, indent=4)
     except IOError as e:
         logger.error(f"Failed to write to {stats_file}: {e}")
+
+def get_stats():
+    stats_file = "/app/data/data.json"
+    if os.path.exists(stats_file) and os.stat(stats_file).st_size > 0:
+        with open(stats_file, "r") as f:
+            stats = json.load(f)
+        return stats, 200
 
 def init_scheduler():
     sched = BackgroundScheduler(daemon=True)

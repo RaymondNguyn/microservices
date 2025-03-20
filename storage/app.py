@@ -2,7 +2,7 @@ import connexion
 from connexion import NoContent
 import json
 import functools
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import Lock
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
@@ -124,13 +124,32 @@ def store_temperature_event(session,payload, trace_id):
     session.commit()
     return NoContent,201
 
+def parse_iso_timestamp(timestamp_str):
+    """Parse a timestamp string in ISO format to a datetime object with UTC timezone"""
+    # Remove trailing Z if present
+    timestamp_str = timestamp_str.rstrip('Z')
+    
+    # Try to handle the problematic +00:00 pattern
+    if '+' in timestamp_str:
+        # Split at the plus sign and just keep the date/time part
+        timestamp_str = timestamp_str.split('+')[0]
+    
+    # Handle any remaining timezone info
+    if ' ' in timestamp_str:
+        # If there's a space (which could be from a replaced '+'), remove everything after it
+        timestamp_str = timestamp_str.split(' ')[0]
+    
+    # Parse the clean timestamp and ensure UTC timezone
+    dt = datetime.fromisoformat(timestamp_str)
+    return dt.replace(tzinfo=timezone.utc)
+
 # Processing endpoints
 def get_windspeed_readings(start_timestamp, end_timestamp):
     """Gets wind speed readings between the start and end timestamps"""
     session = make_session()
     try:
-        start = datetime.fromisoformat(start_timestamp.replace('Z', '+00:00'))
-        end = datetime.fromisoformat(end_timestamp.replace('Z', '+00:00'))
+        start = parse_iso_timestamp(start_timestamp)
+        end = parse_iso_timestamp(end_timestamp)
         
         statement = select(WindReport).where(
             WindReport.timeStamp >= start,
@@ -158,8 +177,8 @@ def get_temp_readings(start_timestamp, end_timestamp):
     """Gets temperature readings between the start and end timestamps"""
     session = make_session()
     try:
-        start = datetime.fromisoformat(start_timestamp.replace('Z', '+00:00'))
-        end = datetime.fromisoformat(end_timestamp.replace('Z', '+00:00'))
+        start = parse_iso_timestamp(start_timestamp)
+        end = parse_iso_timestamp(end_timestamp)
         
         statement = select(TempReport).where(
             TempReport.timeStamp >= start,

@@ -1,6 +1,6 @@
 version: 1
 scheduler:
-  interval: 5
+  interval: 10
 events:
   wind:
     url: http://storage:8090/events/wind-speed
