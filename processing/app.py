@@ -22,19 +22,17 @@ with open(log_config_path, "r") as f:
     LOG_CONFIG['handlers']['file']['filename'] = log_file_path
     logging.config.dictConfig(LOG_CONFIG)
 
-TEMP_URL=Conf["events"]["temperature"]["url"]
-WIND_URL=Conf["events"]["wind"]["url"]
-
+TEMP_URL = Conf["events"]["temperature"]["url"]
+WIND_URL = Conf["events"]["wind"]["url"]
 
 logger = logging.getLogger('basicLogger')
-
 
 app = connexion.FlaskApp(__name__, specification_dir="")
 app.add_api("openapi.yaml", strict_validation=True, validate_responses=True)
 
+
 def populate_stats():
     logger.info("Processing has started")
-    print("In function populate stats!")
 
     stats_file = "/app/data/data.json"
 
@@ -44,80 +42,100 @@ def populate_stats():
         "max_temp_readings": 0,
         "num_wind_readings": 0,
         "max_wind_readings": 0,
-        "last_updated": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        "last_updated": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()  # Fixed missing parenthesis
     }
 
-    # Read stats file safely
-    try:
-        if os.path.exists(stats_file) and os.stat(stats_file).st_size > 0:
+    if os.path.exists(stats_file):
+        try:
             with open(stats_file, 'r') as f:
                 stats = json.load(f)
-        else:
-            logger.warning(f"Stats file missing or empty. Using default stats.")
+        except (json.JSONDecodeError, FileNotFoundError):
+            logger.warning("Error reading stats file. Using default stats.")
             stats = default_stats
-            # Immediately write the default stats to file
-            with open(stats_file, "w") as f:
-                json.dump(stats, f, indent=4)
-    except json.JSONDecodeError as e:
-        logger.error(f"Corrupt JSON in {stats_file}. Resetting to default stats. Error: {e}")
-        stats = default_stats
-        # Immediately write the default stats to file
-        with open(stats_file, "w") as f:
-            json.dump(stats, f, indent=4)
-    except Exception as e:
-        logger.error(f"Unexpected error reading {stats_file}: {e}")
-        stats = default_stats
-        # Immediately write the default stats to file
-        with open(stats_file, "w") as f:
-            json.dump(stats, f, indent=4)
-
-    last_updated = stats.get("last_updated", datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
-    current_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-    # Rest of the function continues as before...
-    temp_url = f"{TEMP_URL}?start_timestamp={last_updated}&end_timestamp={current_time}"
-    wind_url = f"{WIND_URL}?start_timestamp={last_updated}&end_timestamp={current_time}"
-
-    temp_response = httpx.get(temp_url)
-    wind_response = httpx.get(wind_url)
-
-    if temp_response.status_code == 200:
-        temp_events = temp_response.json()
-        num_temp_readings = len(temp_events)
-        max_temp = max((event["temperature"] for event in temp_events), default=stats["max_temp_readings"])
     else:
-        logger.error(f"Failed to get temperature events. Status Code: {temp_response.status_code}")
-        num_temp_readings = 0
-        max_temp = stats["max_temp_readings"]
+        logger.info("Stats file does not exist. Using default stats.")
+        stats = default_stats
+    
+    last_updated = stats["last_updated"]
+    current_time = datetime.now(timezone.utc).isoformat()
+    logger.debug(f"Current time: {current_time}")
 
-    if wind_response.status_code == 200:
-        wind_events = wind_response.json()
-        num_wind_readings = len(wind_events)
-        max_wind = max((event["windspeed"] for event in wind_events), default=stats["max_wind_readings"])
-    else:
-        logger.error(f"Failed to get wind events. Status Code: {wind_response.status_code}")
-        num_wind_readings = 0
-        max_wind = stats["max_wind_readings"]
+    if last_updated != current_time:
+        logger.info(f"Updating last updated timestamp to: {current_time}")
+        stats["last_updated"] = current_time
+    
+    # Debug the request parameters
+    logger.debug(f"Querying with parameters: start_timestamp={last_updated}, end_timestamp={current_time}")
+    
+    start_time = datetime.fromisoformat(last_updated) - timedelta(minutes=1)
+    params = {"start_timestamp": start_time.isoformat(), "end_timestamp": current_time}
 
-    stats["num_temp_readings"] += num_temp_readings
-    stats["num_wind_readings"] += num_wind_readings
-    stats["max_temp_readings"] = max(stats["max_temp_readings"], max_temp)
-    stats["max_wind_readings"] = max(stats["max_wind_readings"], max_wind)
-    stats["last_updated"] = current_time
-
-    # Write updated stats safely
     try:
-        with open(stats_file, "w") as f:
+        wind_response = httpx.get(WIND_URL, params=params)
+        temp_response = httpx.get(TEMP_URL, params=params)
+        
+        # Debug the responses
+        logger.debug(f"Wind response: {wind_response.status_code}")
+        logger.debug(f"Temp response: {temp_response.status_code}")
+        
+        wind_events = wind_response.json() if wind_response.status_code == 200 else []
+        temp_events = temp_response.json() if temp_response.status_code == 200 else []  # Fixed variable name from event to events
+        if wind_response.status_code != 200:
+            logger.error(f"Wind API error: {wind_response.text}")
+        if temp_response.status_code != 200:
+            logger.error(f"Temp API error: {temp_response.text}")
+        
+        logger.debug(f"Wind events: {len(wind_events)}")
+        logger.debug(f"Temp events: {len(temp_events)}")
+
+        if not temp_events and not wind_events:
+            logger.error("Failed to get events or no new events")
+        
+        if wind_events:
+            try:
+                wind_values = [event["windspeed"] for event in wind_events]  # Fixed field name to "windspeed"
+                stats["num_wind_readings"] += len(wind_values)
+                stats["max_wind_readings"] = max(stats["max_wind_readings"], max(wind_values))
+                logger.info(f"Processed {len(wind_values)} wind readings")
+            except KeyError as e:
+                logger.error(f"Key error in wind events: {e}")
+                logger.debug(f"Wind event data: {wind_events}")
+        
+        if temp_events:
+            try:
+                temp_values = [event["temperature"] for event in temp_events]
+                stats["num_temp_readings"] += len(temp_values)
+                stats["max_temp_readings"] = max(stats["max_temp_readings"], max(temp_values))
+                logger.info(f"Processed {len(temp_values)} temperature readings")
+            except KeyError as e:
+                logger.error(f"Key error in temperature events: {e}")
+                logger.debug(f"Temperature event data: {temp_events}")
+                
+        
+        with open(stats_file, 'w') as f:
             json.dump(stats, f, indent=4)
-    except IOError as e:
-        logger.error(f"Failed to write to {stats_file}: {e}")
+            
+    except Exception as e:
+        logger.error(f"Error during processing: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+    
+    logger.info("Processing has ended")
+
 
 def get_stats():
     stats_file = "/app/data/data.json"
     if os.path.exists(stats_file) and os.stat(stats_file).st_size > 0:
-        with open(stats_file, "r") as f:
-            stats = json.load(f)
-        return stats, 200
+        try:
+            with open(stats_file, "r") as f:
+                stats = json.load(f)
+            return stats, 200
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON in stats file")
+            return {"message": "Statistics data not available"}, 500
+    else:
+        logger.error("Stats file not found or empty")
+        return {"message": "Statistics not available"}, 404
 
 def init_scheduler():
     sched = BackgroundScheduler(daemon=True)

@@ -2,7 +2,7 @@ import connexion
 from connexion import NoContent
 import json
 import functools
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from threading import Lock
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
@@ -15,6 +15,7 @@ from pykafka.common import OffsetType
 from threading import Thread
 import uuid
 import os
+from flask import jsonify  # Missing import
 
 config_file_path = os.getenv("CONFIG_FILE")
 log_config_path = os.getenv("LOG_CONFIG_FILE")
@@ -59,9 +60,9 @@ def use_db_session(func):
     return wrapper
 
 def process_messages():
-    hostname = f"{app_conf["events"]["hostname"]}:{app_conf["events"]["port"]}"
+    hostname = f"{app_conf['events']['hostname']}:{app_conf['events']['port']}"
     client = KafkaClient(hosts=hostname)
-    topic = client.topics[str.encode(f"{app_conf["events"]["topic"]}")]
+    topic = client.topics[str.encode(app_conf["events"]["topic"])]  # Fixed string formatting
 
     consumer = topic.get_simple_consumer(
         consumer_group=b'event_group',
@@ -77,131 +78,132 @@ def process_messages():
         payload = msg["payload"]
         
         if msg.get("type") == "wind-speed":
-            store_wind_event(payload,trace_id)
+            store_wind_event(payload, trace_id)
             
         elif msg.get("type") == "temperature":
-            store_temperature_event(payload,trace_id)
+            store_temperature_event(payload, trace_id)
 
         consumer.commit_offsets()
 
-@use_db_session
-def store_wind_event(session,payload,trace_id):
-
+def parse_timestamp(timestamp_str):
+    """
+    Consistently parse ISO 8601 timestamps with either Z or +00:00 timezone markers
+    """
+    # Replace Z with +00:00 to standardize format
+    if timestamp_str.endswith('Z'):
+        timestamp_str = timestamp_str[:-1] + '+00:00'
+    
+    # Ensure T separator
+    if ' ' in timestamp_str and 'T' not in timestamp_str:
+        timestamp_str = timestamp_str.replace(' ', 'T', 1)
+    
     try:
-        timestamp = datetime.strptime(payload["timeStamp"], "%Y-%m-%dT%H:%M:%S.%fZ")
-    except ValueError:
-        timestamp = datetime.strptime(payload["timeStamp"], "%Y-%m-%dT%H:%M:%SZ")
+        return datetime.fromisoformat(timestamp_str)
+    except ValueError as e:
+        logger.error(f"Failed to parse timestamp '{timestamp_str}': {e}")
+        # Fall back to current time minus 5 minutes if parsing fails
+        return datetime.now(timezone.utc) - timedelta(minutes=5)
 
+
+@use_db_session
+def store_wind_event(session, payload, trace_id):
     location_str = json.dumps(payload["location"])
     report_wind_speed = WindReport(
         event_id=payload["eventID"],
         device_id=payload["deviceID"],
-        timeStamp=timestamp,
+        timeStamp=parse_timestamp(payload["timeStamp"]),
         windspeed=payload["windspeed"],
         location=location_str,
         trace_id=trace_id
     )
     session.add(report_wind_speed)
     session.commit()
-    return NoContent,201
+    return NoContent, 201
 
 @use_db_session
-def store_temperature_event(session,payload, trace_id):
-
-    try:
-        timestamp = datetime.strptime(payload["timeStamp"], "%Y-%m-%dT%H:%M:%S.%fZ")
-    except ValueError:
-        timestamp = datetime.strptime(payload["timeStamp"], "%Y-%m-%dT%H:%M:%SZ")
-
+def store_temperature_event(session, payload, trace_id):
     report_temp = TempReport(
         event_id=payload["eventID"],
         device_id=payload["deviceID"],
-        timeStamp=timestamp,
+        timeStamp=parse_timestamp(payload["timeStamp"]),
         temperature=payload["temperature"],
         trace_id=trace_id
     )
     session.add(report_temp)
     session.commit()
-    return NoContent,201
+    return NoContent, 201
 
-def parse_iso_timestamp(timestamp_str):
-    """Parse a timestamp string in ISO format to a datetime object with UTC timezone"""
-    # Remove trailing Z if present
-    timestamp_str = timestamp_str.rstrip('Z')
-    
-    # Try to handle the problematic +00:00 pattern
-    if '+' in timestamp_str:
-        # Split at the plus sign and just keep the date/time part
-        timestamp_str = timestamp_str.split('+')[0]
-    
-    # Handle any remaining timezone info
-    if ' ' in timestamp_str:
-        # If there's a space (which could be from a replaced '+'), remove everything after it
-        timestamp_str = timestamp_str.split(' ')[0]
-    
-    # Parse the clean timestamp and ensure UTC timezone
-    dt = datetime.fromisoformat(timestamp_str)
-    return dt.replace(tzinfo=timezone.utc)
-
-# Processing endpoints
-def get_windspeed_readings(start_timestamp, end_timestamp):
-    """Gets wind speed readings between the start and end timestamps"""
-    session = make_session()
+@use_db_session
+def get_windspeed_readings(session, start_timestamp, end_timestamp):
     try:
-        start = parse_iso_timestamp(start_timestamp)
-        end = parse_iso_timestamp(end_timestamp)
+        # Consider using a wider time window or checking event creation time
+        # Option 1: Add a margin to account for older event timestamps
+        start_time = parse_timestamp(start_timestamp) - timedelta(minutes=15)
+        end_time = parse_timestamp(end_timestamp)
         
+        logger.debug(f"Querying temp events from {start_time}, {end_time}")
+        
+        # Change to query on timeStamp instead of date_created
         statement = select(WindReport).where(
-            WindReport.timeStamp >= start,
-            WindReport.timeStamp < end
+            WindReport.timeStamp >= start_time,
+            WindReport.timeStamp < end_time
         )
         
-        results = [
-            {
-                "eventID": result.event_id,
-                "deviceID": result.device_id,
-                "timeStamp": result.timeStamp.isoformat() + 'Z',
-                "windspeed": result.windspeed,
-                "location": json.loads(result.location),
-                "trace_id": result.trace_id
-            }
-            for result in session.execute(statement).scalars().all()
-        ]
+        events = session.execute(statement).scalars().all()
+        logger.info(f"Found {len(events)} temp events")
         
-        logger.info("Found %d wind events (start: %s, end: %s)", len(results), start, end)
-        return results
-    finally:
-        session.close()
+        return jsonify([
+            {
+                "eventID": event.event_id,  # Add this line
+                "trace_id": event.trace_id,
+                "deviceID": event.device_id,
+                "timeStamp": event.timeStamp.isoformat(),
+                "windspeed": event.windspeed,
+                "location": event.location
 
-def get_temp_readings(start_timestamp, end_timestamp):
-    """Gets temperature readings between the start and end timestamps"""
-    session = make_session()
+            }
+            for event in events
+        ]), 200
+    except Exception as e:
+        logger.error(f"Error in get_wind_readings: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({"error": "Internal server error"}), 500
+
+@use_db_session
+def get_temp_readings(session, start_timestamp, end_timestamp):
     try:
-        start = parse_iso_timestamp(start_timestamp)
-        end = parse_iso_timestamp(end_timestamp)
+        # Consider using a wider time window or checking event creation time
+        # Option 1: Add a margin to account for older event timestamps
+        start_time = parse_timestamp(start_timestamp) - timedelta(minutes=15)
+        end_time = parse_timestamp(end_timestamp)
         
+        logger.debug(f"Querying temp events from {start_time}, {end_time}")
+        
+        # Change to query on timeStamp instead of date_created
         statement = select(TempReport).where(
-            TempReport.timeStamp >= start,
-            TempReport.timeStamp < end
+            TempReport.timeStamp >= start_time,
+            TempReport.timeStamp < end_time
         )
         
-        results = [
-            {
-                "eventID": result.event_id,
-                "deviceID": result.device_id,
-                "timeStamp": result.timeStamp.isoformat() + 'Z',
-                "temperature": result.temperature,
-                "trace_id": result.trace_id
-            }
-            for result in session.execute(statement).scalars().all()
-        ]
+        events = session.execute(statement).scalars().all()
+        logger.info(f"Found {len(events)} temp events")
         
-        logger.info("Found %d temperature events (start: %s, end: %s)", len(results), start, end)
-        return results
-    finally:
-        session.close()
-
-
+        return jsonify([
+            {
+                "eventID": event.event_id,  # Add this line
+                "trace_id": event.trace_id,
+                "deviceID": event.device_id,
+                "temperature": event.temperature,
+                "timeStamp": event.timeStamp.isoformat()
+            }
+            for event in events
+        ]), 200
+    except Exception as e:
+        logger.error(f"Error in get_temp_readings: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":
     setup_kafka_thread()
