@@ -1,5 +1,4 @@
 services:
-
   db:
     image: mysql
     environment:
@@ -31,7 +30,6 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LOG_DIRS: /kafka/kafka-logs
-      # Deletes cluster id on restart
       KAFKA_DELETE_TOPIC_ENABLE: "true"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_BROKER_ID: 1
@@ -53,11 +51,7 @@ services:
       - "8080:8080"
     volumes:
       - ./config:/app/config
-      - ./logs:/logs  # Bind mount for logs
-    environment:
-      - CONFIG_FILE=/app/config/receiver_conf.yml
-      - LOG_FILE=/logs/receiver.log
-      - LOG_CONFIG_FILE=/app/config/log_conf.yml 
+      - ./logs:/logs
     depends_on:
       kafka:
         condition: service_healthy
@@ -69,11 +63,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./config:/app/config
-      - ./logs:/logs  # Bind mount for logs
-    environment:
-      - CONFIG_FILE=/app/config/storage_conf.yml
-      - LOG_FILE=/logs/storage.log
-      - LOG_CONFIG_FILE=/app/config/log_conf.yml 
+      - ./logs:/logs
     depends_on:
       db:
         condition: service_healthy
@@ -89,12 +79,8 @@ services:
       - "8100:8100"
     volumes:
       - ./config:/app/config
-      - ./logs:/logs  # Bind mount for logs
-      - ./data/processing:/app/data  # Store JSON file persistently
-    environment:
-      - CONFIG_FILE=/app/config/processing_conf.yml
-      - LOG_FILE=/logs/processing.log
-      - LOG_CONFIG_FILE=/app/config/log_conf.yml 
+      - ./logs:/logs
+      - ./data/processing:/app/data
     depends_on:
       - storage
     user: "1000:1000"
@@ -107,11 +93,7 @@ services:
       - "8900:8900"
     volumes:
       - ./config:/app/config
-      - ./logs:/logs  # Bind mount for logs
-    environment:
-      - CONFIG_FILE=/app/config/analyzer_conf.yml
-      - LOG_FILE=/logs/analyzer.log
-      - LOG_CONFIG_FILE=/app/config/log_conf.yml 
+      - ./logs:/logs
     depends_on:
       kafka:
         condition: service_healthy

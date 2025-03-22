@@ -15,7 +15,7 @@ from pykafka.common import OffsetType
 from threading import Thread
 import uuid
 import os
-from flask import jsonify  # Missing import
+from flask import jsonify
 
 config_file_path = os.getenv("CONFIG_FILE")
 log_config_path = os.getenv("LOG_CONFIG_FILE")

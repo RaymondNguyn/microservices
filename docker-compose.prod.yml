@@ -1,0 +1,28 @@
+services:
+  receiver:
+    environment:
+      - CONFIG_FILE=/app/config/prod/receiver_conf.yml
+      - LOG_FILE=/logs/receiver.log
+      - LOG_CONFIG_FILE=/app/config/log_conf.yml
+    restart: always
+
+  storage:
+    environment:
+      - CONFIG_FILE=/app/config/prod/storage_conf.yml
+      - LOG_FILE=/logs/storage.log
+      - LOG_CONFIG_FILE=/app/config/log_conf.yml
+    restart: always
+
+  processing:
+    environment:
+      - CONFIG_FILE=/app/config/prod/processing_conf.yml
+      - LOG_FILE=/logs/processing.log
+      - LOG_CONFIG_FILE=/app/config/log_conf.yml
+    restart: always
+
+  analyzer:
+    environment:
+      - CONFIG_FILE=/app/config/prod/analyzer_conf.yml
+      - LOG_FILE=/logs/analyzer.log
+      - LOG_CONFIG_FILE=/app/config/log_conf.yml
+    restart: always
