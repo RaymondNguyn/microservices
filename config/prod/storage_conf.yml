@@ -1,7 +1,7 @@
 version: 1
 datastore:
-  user: ray
-  password: password
+  user: "${STORAGE_USER}"
+  password: "${STORAGE_PASSWORD}"
   hostname: db
   port: 3306
   db: wind

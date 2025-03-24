@@ -3,8 +3,8 @@ services:
     image: mysql
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: 1
-      MYSQL_USER: "${MYSQLUSER}"
-      MYSQL_PASSWORD: "${MYSQLPASSWORD}"
+      MYSQL_USER: "${STORAGE_USER}"
+      MYSQL_PASSWORD: "${STORAGE_PASSWORD}"
       MYSQL_DATABASE: wind
     volumes:
       - mysql_data:/var/lib/mysql
