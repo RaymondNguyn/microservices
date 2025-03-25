@@ -11,6 +11,8 @@ services:
       - CONFIG_FILE=/app/config/prod/storage_conf.yml
       - LOG_FILE=/logs/storage.log
       - LOG_CONFIG_FILE=/app/config/prod/log_conf.yml
+      - STORAGE_USER=${STORAGE_USER}
+      - STORAGE_PASSWORD=${STORAGE_PASSWORD}
     restart: always
 
   processing:

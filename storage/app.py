@@ -25,8 +25,11 @@ log_file_path = os.getenv("LOG_FILE")
 with open(config_file_path, 'r') as f:
     app_conf = yaml.safe_load(f.read())
 
+db_user = os.environ.get("STORAGE_USER")
+db_password = os.environ.get("STORAGE_PASSWORD")
 
-DATABASE_URL = f"mysql://{app_conf['datastore']['user']}:{app_conf['datastore']['password']}@{app_conf['datastore']['hostname']}:{app_conf['datastore']['port']}/{app_conf['datastore']['db']}"
+
+DATABASE_URL = f"mysql://{db_user}:{db_password}@{app_conf['datastore']['hostname']}:{app_conf['datastore']['port']}/{app_conf['datastore']['db']}"
 engine = create_engine(DATABASE_URL)
 
 with open(log_config_path, "r") as f:
@@ -107,13 +110,11 @@ def parse_timestamp(timestamp_str):
 
 @use_db_session
 def store_wind_event(session, payload, trace_id):
-    location_str = json.dumps(payload["location"])
     report_wind_speed = WindReport(
         event_id=payload["eventID"],
         device_id=payload["deviceID"],
         timeStamp=parse_timestamp(payload["timeStamp"]),
         windspeed=payload["windspeed"],
-        location=location_str,
         trace_id=trace_id
     )
     session.add(report_wind_speed)
@@ -159,7 +160,6 @@ def get_windspeed_readings(session, start_timestamp, end_timestamp):
                 "deviceID": event.device_id,
                 "timeStamp": event.timeStamp.isoformat(),
                 "windspeed": event.windspeed,
-                "location": event.location
 
             }
             for event in events

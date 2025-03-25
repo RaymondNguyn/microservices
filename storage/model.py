@@ -11,7 +11,6 @@ class WindReport(Base):
     device_id = mapped_column(String(50), nullable=False)
     timeStamp = mapped_column(DateTime, nullable=False)
     windspeed = mapped_column(Integer, nullable=False)
-    location= mapped_column(String(50), nullable=False)
     date_created = mapped_column(DateTime,nullable=False, default=func.now())
     trace_id = mapped_column(String(50), nullable=False,index=True)
 

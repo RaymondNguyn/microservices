@@ -39,13 +39,6 @@ paths:
                       windspeed:
                         type: number
                         format: float
-                      location:
-                        type: object
-                        properties:
-                          latitude:
-                            type: number
-                          longitude:
-                            type: number
         '404':
           description: Event not found for the given index.
 
@@ -83,13 +76,6 @@ paths:
                       temperature:
                         type: number
                         format: float
-                      location:
-                        type: object
-                        properties:
-                          latitude:
-                            type: number
-                          longitude:
-                            type: number
         '404':
           description: Event not found for the given index.
   /stats:

@@ -116,7 +116,6 @@ components:
         - deviceID
         - timeStamp
         - windspeed
-        - location
       properties:
         eventID:
           type: string
@@ -133,15 +132,6 @@ components:
           type: number
           format: float
           description: The measured wind speed.
-        location:
-          type: object
-          properties:
-            latitude:
-              type: number
-              description: Latitude of the location.
-            longitude:
-              type: number
-              description: Longitude of the location.
         trace_id:
           type: string
           format: uuid
