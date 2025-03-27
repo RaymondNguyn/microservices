@@ -1,0 +1,26 @@
+services:
+  receiver:
+    environment:
+      - CONFIG_FILE=/app/config/dev/receiver_conf.yml
+      - LOG_FILE=/logs/receiver.log
+      - LOG_CONFIG_FILE=/app/config/dev/log_conf.yml
+
+  storage:
+    environment:
+      - CONFIG_FILE=/app/config/dev/storage_conf.yml
+      - LOG_FILE=/logs/storage.log
+      - LOG_CONFIG_FILE=/app/config/dev/log_conf.yml
+      - STORAGE_USER=${STORAGE_USER}
+      - STORAGE_PASSWORD=${STORAGE_PASSWORD}
+
+  processing:
+    environment:
+      - CONFIG_FILE=/app/config/dev/processing_conf.yml
+      - LOG_FILE=/logs/processing.log
+      - LOG_CONFIG_FILE=/app/config/dev/log_conf.yml
+
+  analyzer:
+    environment:
+      - CONFIG_FILE=/app/config/dev/analyzer_conf.yml
+      - LOG_FILE=/logs/analyzer.log
+      - LOG_CONFIG_FILE=/app/config/dev/log_conf.yml

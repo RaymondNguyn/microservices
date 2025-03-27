@@ -13,9 +13,10 @@ data/mysql/
 data/zookeeper/
 data/processing/
 data/storage/
-config/dev/*
+config/prod/*
 
-docker-compose.dev.yml
+docker-compose.prod.yml
+
 
 # ENV
 /.env

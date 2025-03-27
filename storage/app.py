@@ -29,6 +29,7 @@ db_user = os.environ.get("STORAGE_USER")
 db_password = os.environ.get("STORAGE_PASSWORD")
 
 
+
 DATABASE_URL = f"mysql://{db_user}:{db_password}@{app_conf['datastore']['hostname']}:{app_conf['datastore']['port']}/{app_conf['datastore']['db']}"
 engine = create_engine(DATABASE_URL)
 
