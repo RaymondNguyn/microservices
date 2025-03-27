@@ -8,10 +8,14 @@ import yaml
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import httpx
+from connexion.middleware import MiddlewarePosition
+from starlette.middleware.cors import CORSMiddleware
 
 config_file_path = os.getenv("CONFIG_FILE")
 log_config_path = os.getenv("LOG_CONFIG_FILE")
 log_file_path = os.getenv("LOG_FILE")
+base_url = os.getenv("BASE_URL")
+
 
 with open(config_file_path, 'r') as f:
     Conf = yaml.safe_load(f.read())
@@ -29,6 +33,20 @@ logger = logging.getLogger('basicLogger')
 
 app = connexion.FlaskApp(__name__, specification_dir="")
 app.add_api("openapi.yaml", strict_validation=True, validate_responses=True)
+
+app.add_middleware(
+    CORSMiddleware,
+    position=MiddlewarePosition.BEFORE_EXCEPTION,
+    allow_origins=[
+        "http://localhost",
+        "http://localhost:80",
+        f"http://${base_url}:80"
+        ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 
 def populate_stats():

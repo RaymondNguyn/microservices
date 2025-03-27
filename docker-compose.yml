@@ -98,6 +98,15 @@ services:
       kafka:
         condition: service_healthy
     user: "1444:1444"
+  
+  nginx:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+    - "80:80"
+
+
 
 volumes:
   mysql_data:

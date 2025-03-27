@@ -11,10 +11,13 @@ from threading import Thread
 from flask import jsonify
 import time
 import os
+from connexion.middleware import MiddlewarePosition
+from starlette.middleware.cors import CORSMiddleware
 
 config_file_path = os.getenv("CONFIG_FILE")
 log_config_path = os.getenv("LOG_CONFIG_FILE")
 log_file_path = os.getenv("LOG_FILE")
+base_url = os.getenv("BASE_URL")
 
 # Set up config  files
 with open(config_file_path, 'r') as f:
@@ -33,6 +36,19 @@ logger = logging.getLogger('basicLogger')
 # Flask app set up
 app = connexion.FlaskApp(__name__, specification_dir="")
 app.add_api("openapi.yaml", strict_validation=True, validate_responses=True)
+
+app.add_middleware(
+    CORSMiddleware,
+    position=MiddlewarePosition.BEFORE_EXCEPTION,
+    allow_origins=[
+        "http://localhost",
+        "http://localhost:80",
+        f"http://${base_url}:80"
+        ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # api
 def getWindSpeedEvent(index):
