@@ -33,7 +33,13 @@ db_password = os.environ.get("STORAGE_PASSWORD")
 
 
 DATABASE_URL = f"mysql://{db_user}:{db_password}@{app_conf['datastore']['hostname']}:{app_conf['datastore']['port']}/{app_conf['datastore']['db']}"
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_size=10,
+    max_overflow=20,
+    pool_recycle=1800,
+    pool_pre_ping=True
+    )
 
 with open(log_config_path, "r") as f:
     LOG_CONFIG = yaml.safe_load(f.read())
