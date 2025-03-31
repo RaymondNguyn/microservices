@@ -1,8 +1,0 @@
-version: 1
-scheduler:
-  interval: 10
-events:
-  wind:
-    url: http://storage:8090/events/wind-speed
-  temperature:
-    url: http://storage:8090/events/temperature
