@@ -1,12 +1,14 @@
 /* UPDATE THESE VALUES TO MATCH YOUR SETUP */
 
-const BASE_URL = import.meta.env.VM_URL
+const BASE_URL = "0.0.0.0"
 
-const PROCESSING_STATS_API_URL = `http://${BASE_URL}:8900/stats`
+console.log("Base URL:", BASE_URL);
+
+const PROCESSING_STATS_API_URL = `http://${BASE_URL}:8100/stats`
 const ANALYZER_API_URL = {
-    stats: `http://${BASE_URL}:8100/stats`,
-    wind: "http://${BASE_URL}:8100/event.json",
-    temp: "http://${BASE_URL}:8100/event.json"
+    stats: `http://${BASE_URL}:8900/stats`,
+    wind: `http://${BASE_URL}:8900/events/wind-speed?index=0`,
+    temp: `http://${BASE_URL}:8900/events/temperature?index=0`
 }
 
 // This function fetches and updates the general statistics
@@ -30,8 +32,8 @@ const getStats = () => {
     
     makeReq(PROCESSING_STATS_API_URL, (result) => updateCodeDiv(result, "processing-stats"))
     makeReq(ANALYZER_API_URL.stats, (result) => updateCodeDiv(result, "analyzer-stats"))
-    makeReq(ANALYZER_API_URL.snow, (result) => updateCodeDiv(result, "event-snow"))
-    makeReq(ANALYZER_API_URL.lift, (result) => updateCodeDiv(result, "event-lift"))
+    makeReq(ANALYZER_API_URL.wind, (result) => updateCodeDiv(result, "event-snow"))
+    makeReq(ANALYZER_API_URL.temp, (result) => updateCodeDiv(result, "event-lift"))
 }
 
 const updateErrorMessages = (message) => {

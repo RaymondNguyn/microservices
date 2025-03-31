@@ -24,3 +24,7 @@ services:
       - CONFIG_FILE=/app/config/dev/analyzer_conf.yml
       - LOG_FILE=/logs/analyzer.log
       - LOG_CONFIG_FILE=/app/config/dev/log_conf.yml
+  
+  nginx:
+    environment:
+    - VM_URL=0.0.0.0

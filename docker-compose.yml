@@ -103,6 +103,9 @@ services:
     build:
       context: frontend
       dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+
     ports:
     - "80:80"
 
