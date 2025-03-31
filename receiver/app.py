@@ -9,6 +9,7 @@ import yaml
 import logging
 import logging.config
 from pykafka import KafkaClient
+from kafka_wrapper import KafkaWrapper 
 
 # Set up config  files
 config_file_path = os.getenv("CONFIG_FILE")
@@ -24,9 +25,8 @@ with open(log_config_path, "r") as f:
     logging.config.dictConfig(LOG_CONFIG)
 
 # Kafka Set up
-client = KafkaClient(hosts=f"{app_config["events"]["hostname"]}:{app_config["events"]["port"]}")
-topic = client.topics[str.encode(app_config["events"]["topic"])]
-producer = topic.get_sync_producer()
+kafka_wrapper = KafkaWrapper(hostname=f"{app_config['events']['hostname']}:{app_config['events']['port']}",
+                             topic=app_config["events"]["topic"])
 
 # logger set up
 logger = logging.getLogger('basicLogger')
@@ -44,7 +44,7 @@ def createWindSpeedEvent(body):
     }
     
     msg_str = json.dumps(msg)
-    producer.produce(msg_str.encode('utf-8'))
+    kafka_wrapper.produce_message(msg)
     print(msg_str)
     return NoContent,201
 
@@ -56,7 +56,7 @@ def createTemperatureEvent(body):
     }
     
     msg_str = json.dumps(msg)
-    producer.produce(msg_str.encode('utf-8'))
+    kafka_wrapper.produce_message(msg)
     print(msg_str)
     return NoContent,201
 

@@ -16,6 +16,8 @@ from threading import Thread
 import uuid
 import os
 from flask import jsonify
+from kafka_wrapper import KafkaWrapper 
+
 
 config_file_path = os.getenv("CONFIG_FILE")
 log_config_path = os.getenv("LOG_CONFIG_FILE")
@@ -65,29 +67,21 @@ def use_db_session(func):
 
 def process_messages():
     hostname = f"{app_conf['events']['hostname']}:{app_conf['events']['port']}"
-    client = KafkaClient(hosts=hostname)
-    topic = client.topics[str.encode(app_conf["events"]["topic"])]  # Fixed string formatting
+    kafka_wrapper = KafkaWrapper(hostname, app_conf["events"]["topic"].encode())  # Using KafkaWrapper here
 
-    consumer = topic.get_simple_consumer(
-        consumer_group=b'event_group',
-        reset_offset_on_start=False,
-        auto_offset_reset=OffsetType.LATEST
-    )
-
-    for msg in consumer:
+    for msg in kafka_wrapper.messages():  # Get messages from the Kafka wrapper
         msg_str = msg.value.decode('utf-8')
-        msg = json.loads(msg_str)
-        logger.info("Message: %s", msg)
+        msg_data = json.loads(msg_str)
+        logger.info("Message: %s", msg_data)
         trace_id = str(uuid.uuid4())
-        payload = msg["payload"]
+        payload = msg_data["payload"]
         
-        if msg.get("type") == "wind-speed":
+        if msg_data.get("type") == "wind-speed":
             store_wind_event(payload, trace_id)
-            
-        elif msg.get("type") == "temperature":
+        elif msg_data.get("type") == "temperature":
             store_temperature_event(payload, trace_id)
-
-        consumer.commit_offsets()
+        
+        kafka_wrapper.consumer.commit_offsets()
 
 def parse_timestamp(timestamp_str):
     """
