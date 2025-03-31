@@ -57,11 +57,11 @@ const setup = () => {
             console.log(BASE_URL); // Use the API_URL from config.json
 
             // Define the URLs using the BASE_URL after it has been fetched
-            PROCESSING_STATS_API_URL = `http://${BASE_URL}:8100/stats`;
+            PROCESSING_STATS_API_URL = `http://${BASE_URL}/processing/stats`;
             ANALYZER_API_URL = {
-                stats: `http://${BASE_URL}:8900/stats`,
-                wind: `http://${BASE_URL}:8900/events/wind-speed?index=0`,
-                temp: `http://${BASE_URL}:8900/events/temperature?index=0`
+                stats: `http://${BASE_URL}/analyzer/stats`,
+                wind: `http://${BASE_URL}/analyzer/events/wind-speed?index=0`,
+                temp: `http://${BASE_URL}/analyzer/events/temperature?index=0`
             };
 
             console.log(PROCESSING_STATS_API_URL);

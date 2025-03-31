@@ -105,11 +105,22 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./frontend:/usr/share/nginx/html
-
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
     - "80:80"
-
-
+    depends_on:
+      receiver:
+        condition: service_started
+      storage:
+        condition: service_started
+      kafka:
+        condition: service_started
+      db:
+        condition: service_started
+      processing:
+        condition: service_started
+      analyzer:
+        condition: service_started
 
 volumes:
   mysql_data:
