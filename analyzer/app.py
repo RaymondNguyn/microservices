@@ -13,6 +13,7 @@ import time
 import os
 from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
+from kafka_wrapper import KafkaWrapper 
 
 config_file_path = os.getenv("CONFIG_FILE")
 log_config_path = os.getenv("LOG_CONFIG_FILE")
@@ -52,60 +53,44 @@ app.add_middleware(
 
 # api
 def getWindSpeedEvent(index):
-    hostname = f"{app_config["events"]["hostname"]}:{app_config["events"]["port"]}"
-    client = KafkaClient(hosts=hostname)
-    topic = client.topics[str.encode(f"{app_config["events"]["topic"]}")]
-
-    consumer = topic.get_simple_consumer(
-        consumer_group=b'event_group',
-        reset_offset_on_start=True,
-        consumer_timeout_ms=1000
-    )
+    kafka = KafkaWrapper(f"{app_config['events']['hostname']}:{app_config['events']['port']}", 
+                         str.encode(app_config["events"]["topic"]))
+    
     counter = 0
-
-    for msg in consumer:
+    for msg in kafka.messages():
         message = msg.value.decode("utf-8")
         data = json.loads(message)
-        
         payload = data["payload"]
-        logger.info(f"Payload: {payload}")
 
         if data.get("type") == "wind-speed":
             if counter == index:
-                logger.info(f"Found temperature event at index {index}")
+                logger.info(f"Found wind-speed event at index {index}")
                 return payload, 200
             counter += 1
 
-    logger.warning(f"No Wind event found at index {index}")
-    return { "message": f"No message at index {index}!"}, 404
+    logger.warning(f"No wind-speed event found at index {index}")
+    return {"message": f"No message at index {index}!"}, 404
+
     
 
 def getTemperatureEvent(index):
-    hostname = f"{app_config["events"]["hostname"]}:{app_config["events"]["port"]}"
-    client = KafkaClient(hosts=hostname)
-    topic = client.topics[str.encode(f"{app_config["events"]["topic"]}")]
-
-    consumer = topic.get_simple_consumer(
-        consumer_group=b'event_group',
-        reset_offset_on_start=True,
-        consumer_timeout_ms=1000
-    )
+    kafka = KafkaWrapper(f"{app_config['events']['hostname']}:{app_config['events']['port']}", 
+                         str.encode(app_config["events"]["topic"]))
+    
     counter = 0
-    for msg in consumer:
+    for msg in kafka.messages():
         message = msg.value.decode("utf-8")
         data = json.loads(message)
-        
         payload = data["payload"]
-        logger.info(f"Payload: {payload}")
-        
+
         if data.get("type") == "temperature":
             if counter == index:
-                logger.info(f"Found temperature event at index {index}")
+                logger.info(f"Found temp event at index {index}")
                 return payload, 200
             counter += 1
 
-    logger.warning(f"No Wind event found at index {index}")
-    return { "message": f"No message at index {index}!"}, 404
+    logger.warning(f"No temp event found at index {index}")
+    return {"message": f"No message at index {index}!"}, 404
 
 def getStats():
     hostname = f"{app_config["events"]["hostname"]}:{app_config["events"]["port"]}"
@@ -124,7 +109,33 @@ def getStats():
     }
 
     for msg in consumer:
+        message = msg.value.decode("utf-8")def getStats():
+    hostname = f"{app_config["events"]["hostname"]}:{app_config["events"]["port"]}"
+    client = KafkaClient(hosts=hostname)
+    topic = client.topics[str.encode(f"{app_config["events"]["topic"]}")]
+
+    consumer = topic.get_simple_consumer(
+        consumer_group=b'event_group',
+        reset_offset_on_start=True,
+        consumer_timeout_ms=1000
+    )
+    
+    stats = {
+        "num_wind":0,
+        "num_temp":0
+    }
+
+    for msg in consumer:
         message = msg.value.decode("utf-8")
+        data = json.loads(message)
+
+        event_type = data.get("type")
+        if event_type == "wind-speed":
+            stats["num_wind"] += 1
+        elif event_type == "temperature":
+            stats["num_temp"] += 1
+
+    return stats, 201
         data = json.loads(message)
 
         event_type = data.get("type")
