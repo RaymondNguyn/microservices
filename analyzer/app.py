@@ -109,33 +109,7 @@ def getStats():
     }
 
     for msg in consumer:
-        message = msg.value.decode("utf-8")def getStats():
-    hostname = f"{app_config["events"]["hostname"]}:{app_config["events"]["port"]}"
-    client = KafkaClient(hosts=hostname)
-    topic = client.topics[str.encode(f"{app_config["events"]["topic"]}")]
-
-    consumer = topic.get_simple_consumer(
-        consumer_group=b'event_group',
-        reset_offset_on_start=True,
-        consumer_timeout_ms=1000
-    )
-    
-    stats = {
-        "num_wind":0,
-        "num_temp":0
-    }
-
-    for msg in consumer:
         message = msg.value.decode("utf-8")
-        data = json.loads(message)
-
-        event_type = data.get("type")
-        if event_type == "wind-speed":
-            stats["num_wind"] += 1
-        elif event_type == "temperature":
-            stats["num_temp"] += 1
-
-    return stats, 201
         data = json.loads(message)
 
         event_type = data.get("type")
