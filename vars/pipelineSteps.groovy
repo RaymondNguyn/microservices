@@ -7,14 +7,8 @@ def securityScan(String directory = '.') {
     sh "cd ${directory} && pip install bandit && bandit -r ."
 }
 
-def buildAndPush(String imageName,String contextPath, String version = 'latest') {
+def buildAndPush(String imageName, String contextPath, String tagPrefix, String buildNumber) {
+    def version = "${tagPrefix}.${buildNumber}"
     sh "docker build -t rnguyen38/${imageName}:${version} ${contextPath}"
     sh "docker push rnguyen38/${imageName}:${version}"
-}
-
-def deploy(String serviceNames) {
-    // Using SSH to connect to your 3855 VM and redeploy
-    sshagent(['your-ssh-credentials-id']) {
-        sh "root@64.23.244.25 'cd /path/to/your/project && docker-compose pull ${serviceNames} && docker-compose up -d ${serviceNames}'"
-    }
 }

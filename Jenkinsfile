@@ -7,17 +7,27 @@ pipeline {
 
     stages {
         stage('Checkout Ansible Playbook') {
-            steps {
-                git branch: 'main', url: 'git@github.com:RaymondNguyn/ansible-playbook.git'
+        steps {
+            sshagent(['ray-github-ansible-key']) {
+                git branch: 'main', 
+                    url: 'git@github.com:RaymondNguyn/ansible-playbook.git', 
+                    credentialsId: 'github-deploy-key-id'
             }
         }
+    }
 
         stage('Run Ansible Playbook') {
             steps {
-                ansiblePlaybook(
-                    playbook: 'playbook.yaml',
-                    inventory: 'inventory.ini',
-                )
+                sshagent(['ray-microservice-key-ansible']) {
+                    sh '''
+                        # Create a custom ansible.cfg file if needed
+                        echo "[ssh_connection]" > ansible.cfg
+                        echo "ssh_args = -o StrictHostKeyChecking=no" >> ansible.cfg
+                        
+                        # Run the playbook
+                        ansible-playbook -i inventory.ini playbook.yaml
+                    '''
+                }
             }
         }
     }

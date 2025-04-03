@@ -5,7 +5,7 @@ pipeline {
     
     environment {
         SERVICE_NAME = 'processing' // Change for each service: receiver, storage, processing, analyzer
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKERHUB_CREDENTIALS = credentials('ray-dockerhub-cred')
     }
     
     stages {
