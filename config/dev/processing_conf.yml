@@ -3,6 +3,6 @@ scheduler:
   interval: 10
 events:
   wind:
-    url: http://storage/storage/events/wind-speed
+    url: http://nginx/storage/events/wind-speed
   temperature:
-    url: http://storage/storage/events/temperature
+    url: http://nginx/storage/events/temperature
