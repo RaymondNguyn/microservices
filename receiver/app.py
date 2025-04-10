@@ -37,6 +37,8 @@ app.add_api("openapi.yaml",base_path="/receiver", strict_validation=True, valida
 
 # api
 def createWindSpeedEvent(body):
+    traceID = str(uuid.uuid4())
+    body["traceID"] = traceID
     msg = {
         "type":"wind-speed",
         "datetime":datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
@@ -49,6 +51,8 @@ def createWindSpeedEvent(body):
     return NoContent,201
 
 def createTemperatureEvent(body):
+    traceID = str(uuid.uuid4())
+    body["traceID"] = traceID
     msg = {
         "type":"temperature",
         "datetime":datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),

@@ -95,3 +95,62 @@ paths:
                     type: integer
                   temperature_events:
                     type: integer
+
+
+  /listWind:
+    get:
+      summary: Gets the event stats
+      operationId: app.get_wind_event_id
+      description: Gets windspeed and temp
+      responses:
+        '200':
+          description: Successfully returned a list of wind speed
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/Wind_Event_Trace'
+
+  /listTemp:
+    get:
+      summary: Gets the event stats
+      operationId: app.get_temp_event_id
+      description: Gets windspeed and temp
+      responses:
+        '200':
+          description: Successfully returned a list of wind speed
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/Temp_Event_Trace'
+
+components:
+  schemas:
+    Wind_Event_Trace:
+      required:
+        - event_id
+        - trace_id
+      properties:
+        event_id:
+          type: integer
+          example: 500000
+        trace_id:
+          type: integer
+          example: 200
+      type: object
+
+    Temp_Event_Trace:
+      required:
+        - event_id
+        - trace_id
+      properties:
+        event_id:
+          type: integer
+          example: 500000
+        trace_id:
+          type: integer
+          example: 200
+      type: object

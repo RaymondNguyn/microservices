@@ -5,22 +5,6 @@ info:
   version: 1.0.0
 paths:
   /events/wind-speed:
-    # post:
-    #   summary: Submit wind speed event data
-    #   description: Receives wind speed data along with the location and time of measurement.
-    #   operationId: app.createWindSpeedEvent
-    #   requestBody:
-    #     description: Wind speed event data to submit.
-    #     required: true
-    #     content:
-    #       application/json:
-    #         schema:
-    #           $ref: '#/components/schemas/WindSpeedEvent'
-    #   responses:
-    #     "201":
-    #       description: Wind speed event created successfully.
-    #     "400":
-    #       description: Invalid input provided.
     get:
       tags:
       - wind-speed
@@ -56,22 +40,6 @@ paths:
         "404":
           description: No temperature events found
   /events/temperature:
-    # post:
-    #   summary: Submit temperature event data
-    #   description: Receives temperature data from a weather device.
-    #   operationId: app.createTemperatureEvent
-    #   requestBody:
-    #     description: Temperature event data to submit.
-    #     required: true
-    #     content:
-    #       application/json:
-    #         schema:
-    #           $ref: '#/components/schemas/TemperatureEvent'
-    #   responses:
-    #     "201":
-    #       description: Temperature event created successfully.
-    #     "400":
-    #       description: Invalid input provided.
     get:
       tags:
       - temp
@@ -106,6 +74,51 @@ paths:
           description: Invalid timestamp format
         "404":
           description: No temperature events found
+  /count:
+    get:
+      summary: Gets the event stats
+      operationId: app.get_sum_records
+      description: Gets windspeed and temp
+      responses:
+        '200':
+          description: Successfully returned a list of wind speed
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/CountEvent'
+
+  /listWind:
+    get:
+      summary: Gets the event stats
+      operationId: app.get_wind_event_id
+      description: Gets windspeed and temp
+      responses:
+        '200':
+          description: Successfully returned a list of wind speed
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/Wind_Event_Trace'
+
+  /listTemp:
+    get:
+      summary: Gets the event stats
+      operationId: app.get_temp_event_id
+      description: Gets windspeed and temp
+      responses:
+        '200':
+          description: Successfully returned a list of wind speed
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/Temp_Event_Trace'
+
 components:
   schemas:
     WindSpeedEvent:
@@ -164,3 +177,41 @@ components:
           type: string
           format: uuid
           description: trace id
+    CountEvent:
+      required:
+        - wind_count
+        - temp_count
+      properties:
+        wind_count:
+          type: integer
+          example: 500000
+        temp_count:
+          type: integer
+          example: 200
+      type: object
+
+    Wind_Event_Trace:
+      required:
+        - event_id
+        - trace_id
+      properties:
+        event_id:
+          type: integer
+          example: 500000
+        trace_id:
+          type: integer
+          example: 200
+      type: object
+
+    Temp_Event_Trace:
+      required:
+        - event_id
+        - trace_id
+      properties:
+        event_id:
+          type: integer
+          example: 500000
+        trace_id:
+          type: integer
+          example: 200
+      type: object

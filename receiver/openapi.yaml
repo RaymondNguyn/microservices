@@ -47,6 +47,7 @@ components:
         - deviceID
         - timeStamp
         - windspeed
+        - traceID
       properties:
         eventID:
           type: string
@@ -63,6 +64,10 @@ components:
           type: number
           format: float
           description: The measured wind speed.
+        traceID:
+          type: string
+          format: uuid
+          description: UUID for traceID
     TemperatureEvent:
       type: object
       required:
@@ -70,6 +75,7 @@ components:
         - deviceID
         - timeStamp
         - temperature
+        - traceID
       properties:
         eventID:
           type: string
@@ -86,3 +92,7 @@ components:
           type: number
           format: float
           description: The measured temperature.
+        traceID:
+          type: string
+          format: uuid
+          description: UUID for traceID

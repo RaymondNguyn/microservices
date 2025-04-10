@@ -4,7 +4,7 @@ import json
 import functools
 from datetime import datetime, timezone, timedelta
 from threading import Lock
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, func
 from sqlalchemy.orm import sessionmaker, Session
 from model import Base, WindReport, TempReport
 import logging
@@ -23,12 +23,13 @@ config_file_path = os.getenv("CONFIG_FILE")
 log_config_path = os.getenv("LOG_CONFIG_FILE")
 log_file_path = os.getenv("LOG_FILE")
 
-
+print(config_file_path)
 with open(config_file_path, 'r') as f:
     app_conf = yaml.safe_load(f.read())
 
 db_user = os.environ.get("STORAGE_USER")
 db_password = os.environ.get("STORAGE_PASSWORD")
+print(db_user, db_password)
 
 
 
@@ -79,13 +80,12 @@ def process_messages():
         msg_str = msg.value.decode('utf-8')
         msg_data = json.loads(msg_str)
         logger.info("Message: %s", msg_data)
-        trace_id = str(uuid.uuid4())
         payload = msg_data["payload"]
         
         if msg_data.get("type") == "wind-speed":
-            store_wind_event(payload, trace_id)
+            store_wind_event(payload)
         elif msg_data.get("type") == "temperature":
-            store_temperature_event(payload, trace_id)
+            store_temperature_event(payload)
         
         kafka_wrapper.consumer.commit_offsets()
 
@@ -110,26 +110,26 @@ def parse_timestamp(timestamp_str):
 
 
 @use_db_session
-def store_wind_event(session, payload, trace_id):
+def store_wind_event(session, payload):
     report_wind_speed = WindReport(
         event_id=payload["eventID"],
         device_id=payload["deviceID"],
         timeStamp=parse_timestamp(payload["timeStamp"]),
         windspeed=payload["windspeed"],
-        trace_id=trace_id
+        trace_id=payload["traceID"]
     )
     session.add(report_wind_speed)
     session.commit()
     return NoContent, 201
 
 @use_db_session
-def store_temperature_event(session, payload, trace_id):
+def store_temperature_event(session, payload):
     report_temp = TempReport(
         event_id=payload["eventID"],
         device_id=payload["deviceID"],
         timeStamp=parse_timestamp(payload["timeStamp"]),
         temperature=payload["temperature"],
-        trace_id=trace_id
+        trace_id=payload["traceID"]
     )
     session.add(report_temp)
     session.commit()
@@ -205,6 +205,44 @@ def get_temp_readings(session, start_timestamp, end_timestamp):
         import traceback
         logger.error(traceback.format_exc())
         return jsonify({"error": "Internal server error"}), 500
+
+#### Assignment 2
+
+@use_db_session
+def get_sum_records(session):
+    print("testtesttest This IS THE /COUNT ENDPOINT")
+    wind_event = session.query(func.count(WindReport.id)).scalar()
+    temp_event = session.query(func.count(TempReport.id)).scalar()
+
+    return jsonify({
+        "wind_count": wind_event,
+        "temp_count": temp_event
+        })
+
+@use_db_session
+def get_wind_event_id(session):
+    result = session.query(WindReport.event_id, WindReport.trace_id).all()
+
+    response = {
+    "Wind_events":[
+        {"event_id":event_id,"trace_id":trace_id}
+        for event_id, trace_id in result
+    ]}
+
+    return jsonify(response)
+
+@use_db_session
+def get_temp_event_id(session):
+    result = session.query(TempReport.event_id, TempReport.trace_id).all()
+
+    response = {
+    "Temp_events": [
+        {"event_id":event_id,"trace_id":trace_id}
+        for event_id, trace_id in result
+    ]
+    }
+
+    return jsonify(response)
 
 if __name__ == "__main__":
     setup_kafka_thread()

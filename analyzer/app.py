@@ -119,7 +119,124 @@ def getStats():
             stats["num_temp"] += 1
 
     return stats, 201
+
+### Assignment2
+def get_wind_event_id(limit=100):
+    """
+    Get a list of wind speed event IDs and trace IDs from Kafka
+    With a limit parameter and timeout to avoid freezing
+    """
+    hostname = f"{app_config['events']['hostname']}:{app_config['events']['port']}"
+    client = KafkaClient(hosts=hostname)
+    topic = client.topics[str.encode(app_config["events"]["topic"])]
     
+    # Use consumer_timeout_ms to prevent indefinite blocking
+    consumer = topic.get_simple_consumer(
+        consumer_group=b'event_group',
+        reset_offset_on_start=True,
+        consumer_timeout_ms=5000  # 5 second timeout
+    )
+    
+    wind_events = []
+    msg_count = 0
+    
+    logger.info(f"Fetching wind speed events (limited to {limit})")
+    
+    try:
+        for msg in consumer:
+            if msg is None:
+                break
+                
+            # Safety limit on messages processed
+            msg_count += 1
+            if msg_count > 10000:
+                logger.warning("Reached maximum message scan limit")
+                break
+                
+            # Stop when we've collected enough events
+            if len(wind_events) >= limit:
+                break
+                
+            message = msg.value.decode("utf-8")
+            data = json.loads(message)
+            
+            # Only collect wind speed events
+            if data.get("type") == "wind-speed":
+                payload = data["payload"]
+                wind_events.append({
+                    "event_id": payload.get("eventID"),
+                    "trace_id": payload.get("traceID")
+                })
+                
+        logger.info(f"Found {len(wind_events)} wind speed events")
+        response = {"Wind_events":wind_events}
+        return response, 200
+        
+    except Exception as e:
+        logger.error(f"Error retrieving wind speed events: {str(e)}")
+        return {"message": f"Error retrieving events: {str(e)}"}, 500
+    finally:
+        # Always close the consumer to prevent resource leaks
+        consumer.stop()
+
+
+def get_temp_event_id(limit=100):
+    """
+    Get a list of temperature event IDs and trace IDs from Kafka
+    With a limit parameter and timeout to avoid freezing
+    """
+    hostname = f"{app_config['events']['hostname']}:{app_config['events']['port']}"
+    client = KafkaClient(hosts=hostname)
+    topic = client.topics[str.encode(app_config["events"]["topic"])]
+    
+    # Use consumer_timeout_ms to prevent indefinite blocking
+    consumer = topic.get_simple_consumer(
+        consumer_group=b'event_group',
+        reset_offset_on_start=True,
+        consumer_timeout_ms=5000  # 5 second timeout
+    )
+    
+    temperature_events = []
+    msg_count = 0
+    
+    logger.info(f"Fetching temperature events (limited to {limit})")
+    
+    try:
+        for msg in consumer:
+            if msg is None:
+                break
+                
+            # Safety limit on messages processed
+            msg_count += 1
+            if msg_count > 10000:
+                logger.warning("Reached maximum message scan limit")
+                break
+                
+            # Stop when we've collected enough events
+            if len(temperature_events) >= limit:
+                break
+                
+            message = msg.value.decode("utf-8")
+            data = json.loads(message)
+            
+            # Only collect temperature events
+            if data.get("type") == "temperature":
+                payload = data["payload"]
+                temperature_events.append({
+                    "event_id": payload.get("eventID"),
+                    "trace_id": payload.get("traceID")
+                })
+                
+        logger.info(f"Found {len(temperature_events)} temperature events")
+        response = {"Temp_events":temperature_events}
+        return response, 200
+        
+    except Exception as e:
+        logger.error(f"Error retrieving temperature events: {str(e)}")
+        return {"message": f"Error retrieving events: {str(e)}"}, 500
+    finally:
+        # Always close the consumer to prevent resource leaks
+        consumer.stop()
 
 if __name__ == "__main__":
     logger.info("Logger is working!")
