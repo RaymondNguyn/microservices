@@ -25,6 +25,15 @@ services:
       - LOG_CONFIG_FILE=/app/config/dev/log_conf.yml
     restart: always
 
+  anomaly:
+    environment:
+      - CONFIG_FILE=/app/config/dev/anon_conf.yml
+      - LOG_FILE=/logs/anomaly.log
+      - LOG_CONFIG_FILE=/app/config/dev/log_conf.yml
+      - ANON_WIND=60
+      - ANON_TEMP=0
+    restart: always
+
   analyzer:
     environment:
       - CONFIG_FILE=/app/config/dev/analyzer_conf.yml

@@ -82,6 +82,7 @@ def getTemperatureEvent(index):
         message = msg.value.decode("utf-8")
         data = json.loads(message)
         payload = data["payload"]
+        logger.info(f"{payload}")
 
         if data.get("type") == "temperature":
             if counter == index:

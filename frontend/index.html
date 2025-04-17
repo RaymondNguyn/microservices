@@ -26,6 +26,12 @@
             <code id="checks"> Check Stats should appear here</code>
           </div>
 
+          <h2>Anon Checker</h2>
+          <button id="anon-update-button">Trigger Update</button>
+ 
+         <div>
+             <code id="anomalies"> ANON Stats should appear here</code>
+           </div>
 
         <div id="messages"></div>
         <h2>Statistics</h2>
@@ -57,6 +63,7 @@
     let PROCESSING_STATS_API_URL;
     let ANALYZER_API_URL;
     let CONSIST_API_URL;
+    let ANON_API_URL;
 
     // This function fetches and updates the general statistics
     const makeReq = (url, cb) => {
@@ -100,6 +107,27 @@
         }
     }
 
+    const triggerUpdateANON = () => {
+        if (ANON_API_URL && ANON_API_URL.update) {
+            fetch(ANON_API_URL.update, {
+                method: "PUT"
+            })
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                console.log("Consistency update triggered:", data);
+                updateErrorMessages("Consistency update triggered successfully.");
+            })
+            .catch(error => {
+                updateErrorMessages(`Failed to trigger consistency update: ${error.message}`);
+            });
+        } else {
+            updateErrorMessages("CONSIST_API_URL.update is not defined.");
+        }
+    }
+
     // Fetch and display statistics from APIs
     const getStats = () => {
         document.getElementById("last-updated-value").innerText = getLocaleDateStr()
@@ -111,6 +139,7 @@
             makeReq(ANALYZER_API_URL.wind, (result) => updateCodeDiv(result, "event-snow"))
             makeReq(ANALYZER_API_URL.temp, (result) => updateCodeDiv(result, "event-lift"))
             makeReq(CONSIST_API_URL.checks, (result) => updateCodeDiv(result, "checks"))
+            makeReq(ANON_API_URL.checks, (result) => updateCodeDiv(result, "anomalies"))
         } else {
             console.log("API URLs not yet loaded")
         }
@@ -152,6 +181,11 @@
                     checks: `http://${BASE_URL}/consistency/checks`
                 };
 
+                ANON_API_URL = {
+                    update: `http://${BASE_URL}/anomaly/update`,
+                    checks: `http://${BASE_URL}/anomaly/anomalies`
+                };
+
                 console.log(PROCESSING_STATS_API_URL);
                 console.log(ANALYZER_API_URL);
                 
@@ -159,6 +193,7 @@
                 getStats();
                 setInterval(() => getStats(), 4000); // Update every 4 seconds
                 document.getElementById("update-button").addEventListener("click", triggerUpdate);
+                document.getElementById("anon-update-button").addEventListener("click", triggerUpdate);
             })
             .catch(error => {
                 console.error('Error loading config:', error);

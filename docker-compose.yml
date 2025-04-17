@@ -102,6 +102,20 @@ services:
       - storage
     user: "1444:1444"
 
+  anomaly:
+    build:
+      context: anomaly
+      dockerfile: Dockerfile
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./config:/app/config
+      - ./logs:/logs
+      - ./data/anomaly:/app/data
+    depends_on:
+      - storage
+    user: "1444:1444"
+
   analyzer:
     build:
       context: analyzer
