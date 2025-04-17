@@ -43,44 +43,42 @@ paths:
                 properties:
                   message:
                     type: string
+
 components:
   schemas:
-    Checks:
-      required:
-      - counts
-      - not_in_db
-      - not_in_queue
-      - last_updated
+    Counts:
       type: object
+      required:
+        - processing
+        - database
+        - queue
       properties:
-        last_updated:
-          type: string
-          format: date-time
-        counts:
+        processing:
           type: object
           properties:
-            db:
-              type: object
-              properties:
-                event1:
-                  type: integer
-                event2:
-                  type: integer
-            queue:
-              type: object
-              properties:
-                event1:
-                  type: integer
-                event2:
-                  type: integer
-            processing:
-              type: object
-              properties:
-                event1:
-                  type: integer
-                event2:
-                  type: integer
-        not_in_db:
+            wind_count:
+              type: integer
+            temp_count:
+              type: integer
+        database:
+          type: object
+          properties:
+            wind_count:
+              type: integer
+            temp_count:
+              type: integer
+        queue:
+          type: object
+          properties:
+            wind_count:
+              type: integer
+            temp_count:
+              type: integer
+
+    Missing:
+      type: object
+      properties:
+        in_analyzer_not_storage:
           type: array
           items:
             type: object
@@ -89,7 +87,7 @@ components:
                 type: integer
               trace_id:
                 type: integer
-        not_in_queue:
+        in_storage_not_analyzer:
           type: array
           items:
             type: object
@@ -99,3 +97,17 @@ components:
               trace_id:
                 type: integer
 
+    Checks:
+      type: object
+      required:
+        - last_update
+        - count
+        - missing
+      properties:
+        last_update:
+          type: string
+          format: date-time
+        count:
+          $ref: '#/components/schemas/Counts'
+        missing:
+          $ref: '#/components/schemas/Missing'

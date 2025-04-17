@@ -36,12 +36,15 @@ services:
     volumes:
       - ./data/kafka:/kafka/kafka-logs
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./kafka-entrypoint.sh:/kafka-entrypoint.sh 
+    entrypoint: ["/bin/bash", "/kafka-entrypoint.sh"]
     healthcheck:
       test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list | grep -w events"]
       interval: 60s
       timeout: 60s
       retries: 10
       start_period: 60s
+      
 
   receiver:
     build:
@@ -81,6 +84,20 @@ services:
       - ./config:/app/config
       - ./logs:/logs
       - ./data/processing:/app/data
+    depends_on:
+      - storage
+    user: "1444:1444"
+
+  consistency:
+    build:
+      context: consistency
+      dockerfile: Dockerfile
+    ports:
+      - "9100:9100"
+    volumes:
+      - ./config:/app/config
+      - ./logs:/logs
+      - ./data/check:/app/data
     depends_on:
       - storage
     user: "1444:1444"

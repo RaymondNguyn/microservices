@@ -22,6 +22,12 @@ services:
       - LOG_CONFIG_FILE=/app/config/prod/log_conf.yml
     restart: always
 
+  consistency:
+    environment:
+      - LOG_FILE=/logs/consistency.log
+      - LOG_CONFIG_FILE=/app/config/prod/log_conf.yml
+    restart: always
+
   analyzer:
     environment:
       - CONFIG_FILE=/app/config/prod/analyzer_conf.yml

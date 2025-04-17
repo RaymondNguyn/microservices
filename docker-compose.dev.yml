@@ -19,6 +19,12 @@ services:
       - LOG_FILE=/logs/processing.log
       - LOG_CONFIG_FILE=/app/config/dev/log_conf.yml
 
+  consistency:
+    environment:
+      - LOG_FILE=/logs/consistency.log
+      - LOG_CONFIG_FILE=/app/config/dev/log_conf.yml
+    restart: always
+
   analyzer:
     environment:
       - CONFIG_FILE=/app/config/dev/analyzer_conf.yml

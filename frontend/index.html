@@ -7,8 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="ACIT3855 statistics application" />
-    <!-- <script src="updateStats.js"></script> -->
-    <script type="module" src="updateStats.js"></script>
     <title>ACIT3855 - Raymond Nguyen</title>
 </head>
 
@@ -19,6 +17,16 @@
             <h1>Dashboard</h1>
         </div>
         <h5 id="last-updated">Last update: <span id="last-updated-value">N/A</span></h5>
+
+        <!-- Consistency code -->
+         <h2>Consistency Checker</h2>
+         <button id="update-button">Trigger Update</button>
+
+        <div>
+            <code id="checks"> Check Stats should appear here</code>
+          </div>
+
+
         <div id="messages"></div>
         <h2>Statistics</h2>
         <div id="statistics">
@@ -43,6 +51,124 @@
             </div>
         </div>
     </main>
+
+    <script>
+    // Declare the variables at the global level so they can be accessed by all functions
+    let PROCESSING_STATS_API_URL;
+    let ANALYZER_API_URL;
+    let CONSIST_API_URL;
+
+    // This function fetches and updates the general statistics
+    const makeReq = (url, cb) => {
+        fetch(url)
+            .then(res => res.json())
+            .then((result) => {
+                console.log("Received data: ", result)
+                cb(result);
+            }).catch((error) => {
+                updateErrorMessages(error.message)
+            })
+    }
+
+    // Function to update the content of a div with the given ID
+    const updateCodeDiv = (result, elemId) => {
+        document.getElementById(elemId).innerText = JSON.stringify(result, null, 2)
+    }
+
+    // Get the current local date/time as a string
+    const getLocaleDateStr = () => (new Date()).toLocaleString()
+
+    // Trigger consistency update
+    const triggerUpdate = () => {
+        if (CONSIST_API_URL && CONSIST_API_URL.update) {
+            fetch(CONSIST_API_URL.update, {
+                method: "POST"
+            })
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                console.log("Consistency update triggered:", data);
+                updateErrorMessages("Consistency update triggered successfully.");
+            })
+            .catch(error => {
+                updateErrorMessages(`Failed to trigger consistency update: ${error.message}`);
+            });
+        } else {
+            updateErrorMessages("CONSIST_API_URL.update is not defined.");
+        }
+    }
+
+    // Fetch and display statistics from APIs
+    const getStats = () => {
+        document.getElementById("last-updated-value").innerText = getLocaleDateStr()
+        
+        // Only make requests if URLs are defined
+        if (PROCESSING_STATS_API_URL && ANALYZER_API_URL && CONSIST_API_URL) {
+            makeReq(PROCESSING_STATS_API_URL, (result) => updateCodeDiv(result, "processing-stats"))
+            makeReq(ANALYZER_API_URL.stats, (result) => updateCodeDiv(result, "analyzer-stats"))
+            makeReq(ANALYZER_API_URL.wind, (result) => updateCodeDiv(result, "event-snow"))
+            makeReq(ANALYZER_API_URL.temp, (result) => updateCodeDiv(result, "event-lift"))
+            makeReq(CONSIST_API_URL.checks, (result) => updateCodeDiv(result, "checks"))
+        } else {
+            console.log("API URLs not yet loaded")
+        }
+    }
+
+    // Function to update error messages in the UI
+    const updateErrorMessages = (message) => {
+        const id = Date.now()
+        console.log("Creation", id)
+        let msg = document.createElement("div")
+        msg.id = `error-${id}`
+        msg.innerHTML = `<p>Something happened at ${getLocaleDateStr()}!</p><code>${message}</code>`
+        document.getElementById("messages").style.display = "block"
+        document.getElementById("messages").prepend(msg)
+        setTimeout(() => {
+            const elem = document.getElementById(`error-${id}`)
+            if (elem) { elem.remove() }
+        }, 7000)
+    }
+
+    // Setup function that loads the configuration from config.json and sets API URLs
+    const setup = () => {
+        // Load config first, then start periodic updates
+        fetch('config.json')
+            .then(response => response.json())
+            .then(data => {
+                const BASE_URL = data.API_URL;
+                console.log(BASE_URL); // Use the API_URL from config.json
+
+                // Define the URLs using the BASE_URL after it has been fetched
+                PROCESSING_STATS_API_URL = `http://${BASE_URL}/processing/stats`;
+                ANALYZER_API_URL = {
+                    stats: `http://${BASE_URL}/analyzer/stats`,
+                    wind: `http://${BASE_URL}/analyzer/events/wind-speed?index=0`,
+                    temp: `http://${BASE_URL}/analyzer/events/temperature?index=0`
+                };
+                CONSIST_API_URL = {
+                    update: `http://${BASE_URL}/consistency/update`,
+                    checks: `http://${BASE_URL}/consistency/checks`
+                };
+
+                console.log(PROCESSING_STATS_API_URL);
+                console.log(ANALYZER_API_URL);
+                
+                // Now that we have the URLs, we can start getting stats
+                getStats();
+                setInterval(() => getStats(), 4000); // Update every 4 seconds
+                document.getElementById("update-button").addEventListener("click", triggerUpdate);
+            })
+            .catch(error => {
+                console.error('Error loading config:', error);
+                updateErrorMessages(`Failed to load configuration: ${error.message}`);
+            });
+    }
+
+    // Wait until the DOM is fully loaded before starting the setup
+    document.addEventListener('DOMContentLoaded', setup);
+    </script>
 </body>
 
 </html>

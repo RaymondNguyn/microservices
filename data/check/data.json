@@ -1,0 +1,21 @@
+{
+    "last_update": "2025-04-17 08:53:57.778216",
+    "count": {
+        "processing": {
+            "wind_count": 0,
+            "temp_count": 0
+        },
+        "database": {
+            "temp_count": 11,
+            "wind_count": 10
+        },
+        "queue": {
+            "wind_count": 10,
+            "temp_count": 11
+        }
+    },
+    "missing": {
+        "in_analyzer_not_storage": [],
+        "in_storage_not_analyzer": []
+    }
+}
