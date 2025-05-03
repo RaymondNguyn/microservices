@@ -28,7 +28,7 @@ A distributed system featuring microservice architecture with Kafka message queu
 - Microservices architecture for scalability and maintainability
 - Kafka message queue for reliable asynchronous communication
 - Secure credential storage system
-- Automated LaaS (Logging as a Service) setup with Ansible
+- Automated setup with Ansible
 - Docker containerization for consistent deployment environments
 - Development and production configuration separation
 
@@ -44,10 +44,10 @@ A distributed system featuring microservice architecture with Kafka message queu
 ### Getting Started
 ```bash
 # For development environment
-docker-compose -f docker-compose.dev.yml up
+docker-compose -f docker-compose.yml docker-compose.dev.yml up
 
 # For production environment
-docker-compose -f docker-compose.prod.yml up
+docker-compose -f docker-compose.yml docker-compose.prod.yml up
 ```
 
 ### Service Communication Architecture
